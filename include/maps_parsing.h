@@ -24,7 +24,7 @@ typedef struct{
     int regions_index;
 }regions_array;
 
-void parse_lines_of_maps(char** lines);
+void parse_lines_of_maps(char** lines,regions_array* arr_regions);
 void print_mem_regions();
 char* read_maps(pid_t pid);
 int load_proc_info(pid_t pid);

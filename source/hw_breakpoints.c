@@ -23,24 +23,49 @@ int cmd_hardware_breakpoint(int argc,char** argv){
     }
 }
 
+
+
+unsigned long build_dr7_mask(unsigned long old_dr7, int index) {
+    unsigned long dr7 = old_dr7;
+    printf("old dr7 : %lx\n",dr7);
+
+    dr7 |= (1UL << (index * 2)); // 
+
+
+    dr7 &= ~(3UL << (16 + index*4));
+
+
+    dr7 &= ~(3UL << (18 + index*4));
+
+    return dr7;
+}
+
+
+
+
+
+
 int set_hardware_breakpoint(long adress){
+    print_dr();
     unsigned long dr7_reg = ptrace(PTRACE_PEEKUSER,process_to_debug.pid,8*7,0);
     int avalieble_index = return_first_avalieble_hbp_register(dr7_reg);
     if(avalieble_index == -1){
         return 0;
     }
+    printf("avalible index : %d\n",avalieble_index);
     ptrace(PTRACE_POKEUSER,process_to_debug.pid,8*6,0);
-    long res = ptrace(PTRACE_POKEUSER,process_to_debug.pid,8 * avalieble_index,adress);
+    //long res = ptrace(PTRACE_POKEUSER,process_to_debug.pid,8 * avalieble_index,adress);
 
-    unsigned long dr7_bp_number_mask = (1 << avalieble_index*2);
-    dr7_reg |= dr7_bp_number_mask;
+
+
+
     
-    unsigned long dr7_bp_condition_mask_clear = ~(0xFULL << (16 + avalieble_index * 4));
-    dr7_reg &= dr7_bp_condition_mask_clear;
-    res = ptrace(PTRACE_POKEUSER,process_to_debug.pid,8*7,dr7_reg);
+    unsigned long dr7 = build_dr7_mask(dr7_reg,avalieble_index);
 
-    res = ptrace(PTRACE_PEEKUSER,process_to_debug.pid,8*7,0);
-    res = ptrace(PTRACE_PEEKUSER,process_to_debug.pid,8*0,0);
+
+    //res = ptrace(PTRACE_POKEUSER,process_to_debug.pid,8*7,dr7);
+
+    print_dr();
     return 0;
 }
 
@@ -57,6 +82,7 @@ int clear_hardware_breakpoint(int index){
 void print_dr(){
     long dr0 = ptrace(PTRACE_PEEKUSER,process_to_debug.pid,8*0,0);
     printf("dr0 : %lx\n",dr0);
+    
 
     long dr7 = ptrace(PTRACE_PEEKUSER,process_to_debug.pid,8*7,0);
     printf("dr7 : %lx\n",dr7);

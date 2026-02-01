@@ -9,8 +9,8 @@
 
 extern debugee_process process_to_debug;
 
-void parse_lines_of_maps(char** lines){ //parsing the lines of maps file and putting it in global array of mappings 
-    process_to_debug.array_of_regions.regions_index = 0;
+void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the lines of maps file and putting it in global array of mappings 
+    arr_regions->regions_index = 0;
     char** parts_of_line;
     char** two_adresses;
     long start_addr;
@@ -31,22 +31,22 @@ void parse_lines_of_maps(char** lines){ //parsing the lines of maps file and put
         end_addr = strtol(two_adresses[1],NULL,16);
 
         if(strstr(segment_name,process_to_debug.elf_path) != NULL && strstr(segment_permissions,"x") != NULL){
-            process_to_debug.array_of_regions.arr[process_to_debug.array_of_regions.regions_index].type = BINARY;
-            process_to_debug.array_of_regions.arr[process_to_debug.array_of_regions.regions_index].start = start_addr;
-            process_to_debug.array_of_regions.arr[process_to_debug.array_of_regions.regions_index].end = end_addr;
-            process_to_debug.array_of_regions.regions_index++;
+            arr_regions->arr[process_to_debug.array_of_regions.regions_index].type = BINARY;
+            arr_regions->arr[process_to_debug.array_of_regions.regions_index].start = start_addr;
+            arr_regions->arr[process_to_debug.array_of_regions.regions_index].end = end_addr;
+            arr_regions->regions_index++;
         }
         else if(strstr(segment_name,"[heap]") != NULL){
-            process_to_debug.array_of_regions.arr[process_to_debug.array_of_regions.regions_index].type = HEAP;
-            process_to_debug.array_of_regions.arr[process_to_debug.array_of_regions.regions_index].start = start_addr;
-            process_to_debug.array_of_regions.arr[process_to_debug.array_of_regions.regions_index].end = end_addr;
-            process_to_debug.array_of_regions.regions_index++;
+            arr_regions->arr[process_to_debug.array_of_regions.regions_index].type = HEAP;
+            arr_regions->arr[process_to_debug.array_of_regions.regions_index].start = start_addr;
+            arr_regions->arr[process_to_debug.array_of_regions.regions_index].end = end_addr;
+            arr_regions->regions_index++;
         }
-        else if(strstr(segment_name,"[stack]") != NULL){
-            process_to_debug.array_of_regions.arr[process_to_debug.array_of_regions.regions_index].type = STACK;
-            process_to_debug.array_of_regions.arr[process_to_debug.array_of_regions.regions_index].start = start_addr;
-            process_to_debug.array_of_regions.arr[process_to_debug.array_of_regions.regions_index].end = end_addr;
-            process_to_debug.array_of_regions.regions_index++;
+        else if(strstr(segment_name,"stack") != NULL){
+            arr_regions->arr[process_to_debug.array_of_regions.regions_index].type = STACK;
+            arr_regions->arr[process_to_debug.array_of_regions.regions_index].start = start_addr;
+            arr_regions->arr[process_to_debug.array_of_regions.regions_index].end = end_addr;
+            arr_regions->regions_index++;
         }
         free_double_str_ptr(two_adresses);
         free_double_str_ptr(parts_of_line);
@@ -55,7 +55,7 @@ void parse_lines_of_maps(char** lines){ //parsing the lines of maps file and put
 
 void print_mem_regions(){
     for(int i = 0; i < process_to_debug.array_of_regions.regions_index;i++){
-        printf("mem region : %d, start : %ld, end : %ld\n",process_to_debug.array_of_regions.arr[i].type, process_to_debug.array_of_regions.arr[i].start, process_to_debug.array_of_regions.arr[i].end);
+        printf("mem region : %d, start : %lx, end : %lx\n",process_to_debug.array_of_regions.arr[i].type, process_to_debug.array_of_regions.arr[i].start, process_to_debug.array_of_regions.arr[i].end);
     }
 }
 
@@ -90,7 +90,7 @@ char* read_maps(pid_t pid){
 int load_proc_info(pid_t pid){
     char* content = read_maps(pid);
     char** lines = parser(content,"\n");
-    parse_lines_of_maps(lines);
+    parse_lines_of_maps(lines,&process_to_debug.array_of_regions);
     free(content);
     free_double_str_ptr(lines);
 }

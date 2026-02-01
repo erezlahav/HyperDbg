@@ -64,7 +64,7 @@ static void print_flags(unsigned long eflags){
 
 }
 
-static void print_registers(struct user_regs_struct* regs){
+void print_registers(struct user_regs_struct* regs){
     printf("rax = 0x%016llx\n",regs->rax);
     printf("rbx = 0x%016llx\n",regs->rbx);
     printf("rcx = 0x%016llx\n",regs->rcx);

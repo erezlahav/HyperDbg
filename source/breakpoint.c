@@ -274,7 +274,7 @@ int step_over_bp(pid_t pid){
         ptrace(PTRACE_POKEDATA,process_to_debug.pid,regs.rip-1,bp->orig_data);
         regs.rip -= 1;
         set_registers(process_to_debug.pid,&regs);
-        if((bp->type & PERM) == 0){
+        if((bp->type & TEMP) == TEMP){ //not perm breakpoint
             ptrace(PTRACE_SINGLESTEP,process_to_debug.pid,NULL,0);
             int status;
             waitpid(process_to_debug.pid, &status,0);

@@ -5,6 +5,8 @@
 #include <sys/user.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <sys/types.h>
+
 
 #include "commands.h"
 #include "debug.h"
@@ -13,6 +15,7 @@
 #include "elf_parser.h"
 #include "disassembly.h"
 #include "utils.h"
+
 
 extern debugee_process process_to_debug;
 int run_process(int argc,char** argv){

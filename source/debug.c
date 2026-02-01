@@ -13,6 +13,8 @@
 #include "commands.h"
 #include "breakpoint.h"
 #include "hw_breakpoints.h"
+#include "syscall_injection.h"
+
 
 extern debugee_process process_to_debug;
 
@@ -79,6 +81,8 @@ int handle_stopped_process(pid_t pid, int status){
     struct user_regs_struct regs;
     get_registers(pid, &regs);
     printf("process stopped in adress : %llx",regs.rip);
+    siginfo_t si;
+    ptrace(PTRACE_GETSIGINFO, process_to_debug.pid, NULL, &si);
     int signal = WSTOPSIG(status);
     if(signal == SIGTRAP){
         breakpoint* bp = get_breakpoint_by_addr(regs.rip-1); //null if no breakpoint match
