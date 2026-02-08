@@ -78,8 +78,11 @@ int handle_command(char* command){
 
 int handle_stopped_process(pid_t pid, int status){
     process_to_debug.proc_state = STOPPED;
+    step_over_bp(process_to_debug.pid);
     struct user_regs_struct regs;
     get_registers(pid, &regs);
+
+
     printf("process stopped in adress : %llx",regs.rip);
     siginfo_t si;
     ptrace(PTRACE_GETSIGINFO, process_to_debug.pid, NULL, &si);

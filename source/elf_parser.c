@@ -147,6 +147,9 @@ Elf64_Shdr* get_section_header_by_type(Elf64_Shdr* section_headers, uint32_t typ
     return NULL;
 }
 
+
+
+
 Elf64_Sym* get_symbols_from_symbol_section_header(Elf64_Shdr* symbol_section_header,FILE* elf_file_ptr){
 
     Elf64_Sym* symbols = malloc(symbol_section_header->sh_size);
@@ -209,6 +212,11 @@ symbols_array* get_symbols_from_file(FILE* elf_file_ptr){
     Elf64_Ehdr* elf_header = get_elf_header(elf_file_ptr);
     Elf64_Shdr* section_headers = get_section_headers(elf_header,elf_file_ptr);
     uint16_t number_of_section_headers = get_number_of_section_headers(elf_header);
+    /*
+    Elf64_Shdr* shstrtab_section_header = find_shstrtab_in_section_headers(section_headers,elf_header);
+    char* section_header_names = get_section_headers_names(shstrtab_section_header,elf_file_ptr);
+    print_section_headers(section_headers,section_header_names,number_of_section_headers);
+    */
     Elf64_Shdr* symtab_section_header = get_section_header_by_type(section_headers,SHT_SYMTAB,number_of_section_headers);
     Elf64_Shdr* dynsym_section_header = get_section_header_by_type(section_headers,SHT_DYNSYM,number_of_section_headers);
     symbol* symbols_to_return;

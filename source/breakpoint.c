@@ -266,7 +266,11 @@ int step_over_bp(pid_t pid){
     struct user_regs_struct regs;
     get_registers(process_to_debug.pid, &regs);
     breakpoint* bp = get_breakpoint_by_addr(regs.rip-1);
-    if(bp != NULL){
+    long current_opcodes = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,regs.rip-1,NULL); 
+    long first_byte = current_opcodes & 0xff;
+
+
+    if(bp != NULL && first_byte == 0xcc){
         if(regs.rip-1 != bp->abs_adress){
             return 0;
         }
