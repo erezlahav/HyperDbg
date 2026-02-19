@@ -9,7 +9,8 @@
 typedef enum{
     BINARY,
     HEAP,
-    STACK
+    STACK,
+    DATA
 }region_type;
 
 
@@ -20,8 +21,8 @@ typedef struct{
 }memory_region;
 
 typedef struct{
-    memory_region arr[MEMORY_MAPPINGS_SIZE];
-    int regions_index;
+    memory_region* arr;
+    int regions_count;
 }regions_array;
 
 void parse_lines_of_maps(char** lines,regions_array* arr_regions);

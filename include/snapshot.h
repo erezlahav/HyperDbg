@@ -4,17 +4,13 @@
 #include "maps_parsing.h"
 
 
-typedef struct{
-    pid_t tid;
-    struct user_regs_struct regs;   
-    memory_region* thread_stack;
-}thread_snapshot;
 
 
 
 typedef struct{
     regions_array* arr_of_regions;
-    thread_snapshot thread_info;
+    pid_t tid;
+    struct user_regs_struct regs;   
 }snapshot;
 
 
@@ -22,5 +18,5 @@ typedef struct{
 
 typedef struct{
     snapshot* arr_snapshots;
-    int cnt_snapshots;
+    int current_snapshot;
 }array_snapshots;

@@ -26,7 +26,7 @@ int main(int argc,char* argv[],char* envp[]){
     }
     FILE* elf_target_ptr = NULL;
 
-    process_to_debug.snapshots.cnt_snapshots = 0;
+    process_to_debug.snapshots.current_snapshot = -1;
 
     process_to_debug.array_of_breakpoints.number_of_breakpoints = 0;
     process_to_debug.array_of_breakpoints.arr_breakpoints = malloc(sizeof(breakpoint)* MAX_AMOUNT_OF_BREAKPOINTS);
@@ -40,8 +40,6 @@ int main(int argc,char* argv[],char* envp[]){
             printf("fopen failed!\n");
             exit(0);
         }
-//get status of elf file target process
-        //get_functions(elf_target_ptr);
         process_to_debug.PIE = get_pie_status(elf_target_ptr);
         process_to_debug.text_segment_offset_va = get_loading_vaddr_of_text_segment(elf_target_ptr);
         process_to_debug.array_of_symbols = get_symbols_from_file(elf_target_ptr);
