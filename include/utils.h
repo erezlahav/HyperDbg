@@ -2,6 +2,8 @@
 
 #include "elf_parser.h"
 
+
+char** parse_command(char* command,int* argc_out);
 long convert_str_addr_to_long(char* addr);
 char* get_elf_path_by_pid(pid_t pid);
 char* get_full_path(char* path);

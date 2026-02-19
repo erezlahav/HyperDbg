@@ -10,7 +10,32 @@
 #define AMOUNT_OF_PATHS 100
 #define MAX_PATH_SIZE 150
 #define SIZE_OF_PATH 50
+#define DELIM " \r\t\n"
+#define AMOUNT_OF_COMMANDS 20
+#define MAX_COMMAND_LENGTH 150
 extern debugee_process process_to_debug;
+
+
+
+char** parse_command(char* command,int* argc_out){
+    char** commands = malloc(sizeof(char*) * AMOUNT_OF_COMMANDS);
+    char* curr_substring = strtok(command,DELIM);
+    int index = 0;
+    while(curr_substring != NULL){
+        commands[index] = malloc(MAX_COMMAND_LENGTH);
+        strncpy(commands[index],curr_substring,MAX_COMMAND_LENGTH);
+        commands[index][strlen(curr_substring)] = '\x00';
+        curr_substring = strtok(NULL,DELIM);
+        index++;
+    }
+    commands[index] = NULL;
+    *argc_out = index;
+    return commands;
+}
+
+
+
+
 
 
 
@@ -121,7 +146,7 @@ symbol* get_symbol_by_adress(unsigned long adress){ //for backtrace
     for(int i = 0; i < number_of_symbols; i++){
         long start_adress = symbol_array_ptr[i].adress;
         long end_adress = symbol_array_ptr[i].adress + symbol_array_ptr[i].size;
-        if(adress > start_adress && adress < end_adress){
+        if(adress >= start_adress && adress <= end_adress){
             return &symbol_array_ptr[i];
         }
     }

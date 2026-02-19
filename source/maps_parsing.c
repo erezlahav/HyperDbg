@@ -31,21 +31,21 @@ void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the
         end_addr = strtol(two_adresses[1],NULL,16);
 
         if(strstr(segment_name,process_to_debug.elf_path) != NULL && strstr(segment_permissions,"x") != NULL){
-            arr_regions->arr[process_to_debug.array_of_regions.regions_index].type = BINARY;
-            arr_regions->arr[process_to_debug.array_of_regions.regions_index].start = start_addr;
-            arr_regions->arr[process_to_debug.array_of_regions.regions_index].end = end_addr;
+            arr_regions->arr[arr_regions->regions_index].type = BINARY;
+            arr_regions->arr[arr_regions->regions_index].start = start_addr;
+            arr_regions->arr[arr_regions->regions_index].end = end_addr;
             arr_regions->regions_index++;
         }
         else if(strstr(segment_name,"[heap]") != NULL){
-            arr_regions->arr[process_to_debug.array_of_regions.regions_index].type = HEAP;
-            arr_regions->arr[process_to_debug.array_of_regions.regions_index].start = start_addr;
-            arr_regions->arr[process_to_debug.array_of_regions.regions_index].end = end_addr;
+            arr_regions->arr[arr_regions->regions_index].type = HEAP;
+            arr_regions->arr[arr_regions->regions_index].start = start_addr;
+            arr_regions->arr[arr_regions->regions_index].end = end_addr;
             arr_regions->regions_index++;
         }
         else if(strstr(segment_name,"stack") != NULL){
-            arr_regions->arr[process_to_debug.array_of_regions.regions_index].type = STACK;
-            arr_regions->arr[process_to_debug.array_of_regions.regions_index].start = start_addr;
-            arr_regions->arr[process_to_debug.array_of_regions.regions_index].end = end_addr;
+            arr_regions->arr[arr_regions->regions_index].type = STACK;
+            arr_regions->arr[arr_regions->regions_index].start = start_addr;
+            arr_regions->arr[arr_regions->regions_index].end = end_addr;
             arr_regions->regions_index++;
         }
         free_double_str_ptr(two_adresses);

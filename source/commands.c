@@ -146,6 +146,10 @@ int print_backtrace(int argc,char** argv){
     unsigned long current_rbp = regs.rbp;
     unsigned long current_rip = regs.rip;
     symbol* current_symbol = get_symbol_by_adress(current_rip);
+    if(current_symbol == NULL){
+        printf("unknown symbol\n");
+        return 0;
+    }
     int current_function_index = 0;
     printf("#%d   %s\n",current_function_index,current_symbol->name);
     while(current_rbp != 0){

@@ -13,6 +13,14 @@ typedef struct{
 
 
 typedef struct{
-    regions_array arr_of_regions;
+    regions_array* arr_of_regions;
     thread_snapshot thread_info;
 }snapshot;
+
+
+
+
+typedef struct{
+    snapshot* arr_snapshots;
+    int cnt_snapshots;
+}array_snapshots;
