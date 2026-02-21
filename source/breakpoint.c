@@ -156,7 +156,6 @@ int handle_star_breakpoint(char** argv,unsigned char type){
     if(break_arg[0] != '*'){return 0;};
 
     break_arg++;
-    printf("%s\n",break_arg);
     if(strncmp(break_arg,"0x",2) == 0 || strncmp(break_arg,"0X",2) == 0){ //break adress case like b *0x007fffc120
         set_break_raw_adress(break_arg,type);
     }

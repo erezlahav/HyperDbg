@@ -70,7 +70,7 @@ int main(int argc,char* argv[],char* envp[]){
         process_to_debug.PIE = get_pie_status(elf_target_ptr);
         process_to_debug.text_segment_offset_va = get_loading_vaddr_of_text_segment(elf_target_ptr);
         process_to_debug.array_of_symbols = get_symbols_from_file(elf_target_ptr);   
-        load_proc_info(process_to_debug.pid);
+        parse_maps(process_to_debug.pid,&process_to_debug.array_of_regions);
         update_adressing_of_symtab_symbols(process_to_debug.array_of_symbols, process_to_debug.array_of_regions.arr[0].start);
         debug_process(process_to_debug.elf_path);
     }

@@ -20,3 +20,9 @@ typedef struct{
     snapshot* arr_snapshots;
     int current_snapshot;
 }array_snapshots;
+
+
+
+int in_snapshot_range(long adress);
+int save_snapshot();
+void print_current_snapshot();

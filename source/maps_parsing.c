@@ -92,11 +92,11 @@ char* read_maps(pid_t pid){
 
 
 
-int load_proc_info(pid_t pid){
+int parse_maps(pid_t pid,regions_array* arr_regions){
     char* content = read_maps(pid);
     char** lines = parser(content,"\n");
     process_to_debug.array_of_regions.arr = malloc(sizeof(memory_region) * MAX_REGIONS_NUMBER);
-    parse_lines_of_maps(lines,&process_to_debug.array_of_regions);
+    parse_lines_of_maps(lines,arr_regions);
     free(content);
     free_double_str_ptr(lines);
 }
