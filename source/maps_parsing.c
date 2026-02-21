@@ -45,6 +45,12 @@ void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the
             arr_regions->arr[arr_regions->regions_count].end = end_addr;
             arr_regions->regions_count++;
         }
+        else if(strstr(segment_name,process_to_debug.elf_path) != NULL && strstr(segment_permissions,"w") != NULL){
+            arr_regions->arr[arr_regions->regions_count].type = DATA;
+            arr_regions->arr[arr_regions->regions_count].start = start_addr;
+            arr_regions->arr[arr_regions->regions_count].end = end_addr;
+            arr_regions->regions_count++;
+        }
         else if(strstr(segment_name,"[heap]") != NULL){
             arr_regions->arr[arr_regions->regions_count].type = HEAP;
             arr_regions->arr[arr_regions->regions_count].start = start_addr;
@@ -64,7 +70,24 @@ void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the
 
 void print_mem_regions(regions_array* arr_regions){
     for(int i = 0; i < arr_regions->regions_count;i++){
-        printf("mem region : %d, start : %lx, end : %lx\n",arr_regions->arr[i].type, arr_regions->arr[i].start, arr_regions->arr[i].end);
+        printf("mem region : ");
+        switch (arr_regions->arr[i].type){
+            case 0:
+                printf("BINARY");
+                break;
+            case 1:
+                printf("HEAP");
+                break;
+            case 2:
+                printf("STACK");
+                break;
+            case 3:
+                printf("DATA");
+                break;
+            
+        }
+
+        printf(", start : %lx, end : %lx\n",arr_regions->arr[i].start, arr_regions->arr[i].end);
     }
 }
 

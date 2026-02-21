@@ -51,8 +51,8 @@ int run_process(int argc,char** argv){
 
 int continue_proc(int argc,char** argv){
 
-    save_snapshot();
-    print_current_snapshot();
+    //save_snapshot();
+    //print_current_snapshot();
     if(process_to_debug.proc_state == LOADED || process_to_debug.proc_state == NOT_LOADED){
         printf("process is not running yet\n");
         return 0;
@@ -158,7 +158,6 @@ int print_backtrace(int argc,char** argv){
     int max_depth = 64;
     
     while(current_rbp != 0 && current_function_index < max_depth){
-        printf("func index : %d\n",current_function_index);
         long return_adress = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,(void*)(current_rbp+8),NULL);
         current_rbp = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,(void*)(current_rbp),NULL);
         current_symbol = get_symbol_by_adress(return_adress);
