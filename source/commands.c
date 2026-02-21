@@ -51,8 +51,8 @@ int run_process(int argc,char** argv){
 
 int continue_proc(int argc,char** argv){
 
-    //save_snapshot();
-    //print_current_snapshot();
+    save_snapshot();
+    print_current_snapshot();
     if(process_to_debug.proc_state == LOADED || process_to_debug.proc_state == NOT_LOADED){
         printf("process is not running yet\n");
         return 0;

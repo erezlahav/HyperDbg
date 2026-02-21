@@ -26,6 +26,6 @@ typedef struct{
 }regions_array;
 
 void parse_lines_of_maps(char** lines,regions_array* arr_regions);
-void print_mem_regions();
+void print_mem_regions(regions_array* arr_regions);
 char* read_maps(pid_t pid);
 int parse_maps(pid_t pid,regions_array* arr_regions);

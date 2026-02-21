@@ -7,7 +7,7 @@
 #include "snapshot.h"
 #include "debug.h"
 #include "info_commands.h"
-
+#include "maps_parsing.h"
 
 #define _GNU_SOURCE
 #define MAX_SNAPSHOTS 50
@@ -47,7 +47,7 @@ int save_snapshot(){
     process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].regs = regs;
 
     process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions = malloc(sizeof(regions_array));
-    
+    parse_maps(process_to_debug.pid,process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
     snapshots_saved++;
 }
 
@@ -56,4 +56,6 @@ void print_current_snapshot(){
     snapshot curr_snapshot = process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot];
     printf("current tid : %d\n",curr_snapshot.tid);
     print_registers(&curr_snapshot.regs);
+    print_mem_regions(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
+
 }

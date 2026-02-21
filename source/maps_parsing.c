@@ -22,8 +22,9 @@ void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the
     long end_addr;
     for(int i = 0;lines[i] != NULL;i++){
         parts_of_line = parser(lines[i]," "); //0 index : adress , 1 index : permissions, 2 index : xxxx, 3 index : date of mapping, 4 index : xxxx, 5 index : name of segment
+        
         char* segment_name;
-        if(parts_of_line[5] == NULL){
+        if(parts_of_line[5] == NULL ){
             segment_name = " ";
         }
         else{
@@ -31,6 +32,9 @@ void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the
         }
         char* segment_permissions = parts_of_line[1];
         char* segment_mapped_adress = parts_of_line[0];
+
+
+
         two_adresses = parser(segment_mapped_adress,"-");
         start_addr = strtol(two_adresses[0],NULL,16);
         end_addr = strtol(two_adresses[1],NULL,16);
@@ -58,9 +62,9 @@ void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the
     }
 }
 
-void print_mem_regions(){
-    for(int i = 0; i < process_to_debug.array_of_regions.regions_count;i++){
-        printf("mem region : %d, start : %lx, end : %lx\n",process_to_debug.array_of_regions.arr[i].type, process_to_debug.array_of_regions.arr[i].start, process_to_debug.array_of_regions.arr[i].end);
+void print_mem_regions(regions_array* arr_regions){
+    for(int i = 0; i < arr_regions->regions_count;i++){
+        printf("mem region : %d, start : %lx, end : %lx\n",arr_regions->arr[i].type, arr_regions->arr[i].start, arr_regions->arr[i].end);
     }
 }
 
@@ -85,6 +89,7 @@ char* read_maps(pid_t pid){
         offset_to_content += bytes_read;
         content = realloc(content,offset_to_content+CHUNK_SIZE);
     }
+    content[offset_to_content] = '\x00';
     fclose(maps_file_ptr);
 
     return content;
@@ -94,8 +99,8 @@ char* read_maps(pid_t pid){
 
 int parse_maps(pid_t pid,regions_array* arr_regions){
     char* content = read_maps(pid);
-    char** lines = parser(content,"\n");
-    process_to_debug.array_of_regions.arr = malloc(sizeof(memory_region) * MAX_REGIONS_NUMBER);
+    char** lines = parser(content,"\n\t\r");
+    arr_regions->arr = malloc(sizeof(memory_region) * MAX_REGIONS_NUMBER);
     parse_lines_of_maps(lines,arr_regions);
     free(content);
     free_double_str_ptr(lines);
