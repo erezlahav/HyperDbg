@@ -43,24 +43,40 @@ void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the
             arr_regions->arr[arr_regions->regions_count].type = BINARY;
             arr_regions->arr[arr_regions->regions_count].start = start_addr;
             arr_regions->arr[arr_regions->regions_count].end = end_addr;
+            arr_regions->arr[arr_regions->regions_count].permissions = 0;
+            if(strstr(segment_permissions,"x")) arr_regions->arr[arr_regions->regions_count].permissions |= EXECUTE;
+            if(strstr(segment_permissions,"w")) arr_regions->arr[arr_regions->regions_count].permissions |= WRITE;
+            if(strstr(segment_permissions,"r")) arr_regions->arr[arr_regions->regions_count].permissions |= READ;
             arr_regions->regions_count++;
         }
         else if(strstr(segment_name,process_to_debug.elf_path) != NULL && strstr(segment_permissions,"w") != NULL){
             arr_regions->arr[arr_regions->regions_count].type = DATA;
             arr_regions->arr[arr_regions->regions_count].start = start_addr;
             arr_regions->arr[arr_regions->regions_count].end = end_addr;
+            arr_regions->arr[arr_regions->regions_count].permissions = 0;
+            if(strstr(segment_permissions,"x")) arr_regions->arr[arr_regions->regions_count].permissions |= EXECUTE;
+            if(strstr(segment_permissions,"w")) arr_regions->arr[arr_regions->regions_count].permissions |= WRITE;
+            if(strstr(segment_permissions,"r")) arr_regions->arr[arr_regions->regions_count].permissions |= READ;
             arr_regions->regions_count++;
         }
         else if(strstr(segment_name,"[heap]") != NULL){
             arr_regions->arr[arr_regions->regions_count].type = HEAP;
             arr_regions->arr[arr_regions->regions_count].start = start_addr;
             arr_regions->arr[arr_regions->regions_count].end = end_addr;
+            arr_regions->arr[arr_regions->regions_count].permissions = 0;
+            if(strstr(segment_permissions,"x")) arr_regions->arr[arr_regions->regions_count].permissions |= EXECUTE;
+            if(strstr(segment_permissions,"w")) arr_regions->arr[arr_regions->regions_count].permissions |= WRITE;
+            if(strstr(segment_permissions,"r")) arr_regions->arr[arr_regions->regions_count].permissions |= READ;
             arr_regions->regions_count++;
         }
         else if(strstr(segment_name,"stack") != NULL){
             arr_regions->arr[arr_regions->regions_count].type = STACK;
             arr_regions->arr[arr_regions->regions_count].start = start_addr;
             arr_regions->arr[arr_regions->regions_count].end = end_addr;
+            arr_regions->arr[arr_regions->regions_count].permissions = 0;
+            if(strstr(segment_permissions,"x")) arr_regions->arr[arr_regions->regions_count].permissions |= EXECUTE;
+            if(strstr(segment_permissions,"w")) arr_regions->arr[arr_regions->regions_count].permissions |= WRITE;
+            if(strstr(segment_permissions,"r")) arr_regions->arr[arr_regions->regions_count].permissions |= READ;
             arr_regions->regions_count++;
         }
         free_double_str_ptr(two_adresses);
@@ -87,7 +103,7 @@ void print_mem_regions(regions_array* arr_regions){
             
         }
 
-        printf(", start : %lx, end : %lx\n",arr_regions->arr[i].start, arr_regions->arr[i].end);
+        printf(", start : %lx, end : %lx,permissions : %d\n",arr_regions->arr[i].start, arr_regions->arr[i].end,arr_regions->arr[i].permissions);
     }
 }
 

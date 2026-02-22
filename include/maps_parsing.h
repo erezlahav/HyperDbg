@@ -6,6 +6,14 @@
 
 #define MEMORY_MAPPINGS_SIZE 1024
 
+
+typedef enum{
+    READ = 1<<0,
+    WRITE = 1<<1,
+    EXECUTE = 1<<2
+}permissions;
+
+
 typedef enum{
     BINARY,
     HEAP,
@@ -16,6 +24,7 @@ typedef enum{
 
 typedef struct{
     region_type type;
+    int permissions;
     long start;
     long end; 
 }memory_region;

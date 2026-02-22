@@ -2,7 +2,7 @@
 #include <sys/ptrace.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <string.h>
 
 #include "snapshot.h"
 #include "debug.h"
@@ -11,6 +11,9 @@
 
 #define _GNU_SOURCE
 #define MAX_SNAPSHOTS 50
+#define MAX_PAGES 100
+
+
 extern debugee_process process_to_debug;
 
 //soon...
@@ -48,8 +51,53 @@ int save_snapshot(){
 
     process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions = malloc(sizeof(regions_array));
     parse_maps(process_to_debug.pid,process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
+    arr_pages* pages = create_arr_pages(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
+    process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].pages_array = pages;
+
+
     snapshots_saved++;
 }
+
+
+
+arr_pages* create_arr_pages(regions_array* regions_arr){
+    int regions_cnt = regions_arr->regions_count;
+    arr_pages* pages_arr = malloc(sizeof(arr_pages));
+    pages_arr->cnt_pages = 0;
+    int max_pages = MAX_PAGES;
+    pages_arr->pages = malloc(max_pages * sizeof(page));
+    memory_region* arr = regions_arr->arr;
+    for(int i = 0; i < regions_cnt;i++){
+        if(arr[i].type == BINARY) continue;
+        size_t size = PAGE_ALIGN(arr[i].end - arr[i].start);
+        int pages_cnt = size/PAGE_SIZE;
+        page current_page;
+        long offset_start = 0;
+        //printf("size : %lx\naligned size : %lx\npages : %d\n",size,aligned_size,pages_cnt);
+        for(int j = 0; j < pages_cnt;j++){
+            if(pages_arr->cnt_pages >= max_pages){
+                pages_arr->pages = realloc(pages_arr->pages, (max_pages + MAX_PAGES) * sizeof(page));
+                max_pages += MAX_PAGES;
+            }
+            current_page.start = arr[i].start + offset_start;
+            current_page.size = PAGE_SIZE;
+            current_page.dirty_bit = 0;
+            memcpy(pages_arr->pages + pages_arr->cnt_pages,&current_page,sizeof(page));
+            offset_start += PAGE_SIZE;
+            pages_arr->cnt_pages++;
+        }
+
+    }
+    return pages_arr;
+}
+
+
+void print_pages(arr_pages* pages){
+    for(int i = 0; i < pages->cnt_pages;i++){
+        printf("start : %ld\n",pages->pages[i].start);
+    }
+}
+
 
 void print_current_snapshot(){
     printf("current index  : %d\n",process_to_debug.snapshots.current_snapshot);
@@ -57,5 +105,5 @@ void print_current_snapshot(){
     printf("current tid : %d\n",curr_snapshot.tid);
     print_registers(&curr_snapshot.regs);
     print_mem_regions(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
-
+    print_pages(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].pages_array);
 }
