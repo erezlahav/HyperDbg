@@ -270,7 +270,7 @@ int exemine(int argc,char** argv){ // x/[COUNT][SIZE][FORMAT] ADDRESS/REGISTER
 
 
         if(data_read_ptr->bytes_read == 0){
-            printf("could not read bytes from adress : %lx",adress);
+            printf("Cannot access memory at address : %lx\n",adress);
             return 0;
         }
         if(FORMAT == INSTRUCTION){

@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/mman.h>
+
 
 #include "snapshot.h"
 #include "debug.h"
@@ -105,5 +107,11 @@ void print_current_snapshot(){
     printf("current tid : %d\n",curr_snapshot.tid);
     print_registers(&curr_snapshot.regs);
     print_mem_regions(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
-    print_pages(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].pages_array);
+    //print_pages(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].pages_array);
+    //inject_mprotect(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions->arr[2].start,135168,PROT_READ);
 }
+
+
+
+
+

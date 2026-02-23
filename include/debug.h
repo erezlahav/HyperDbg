@@ -1,6 +1,7 @@
 #pragma once
 #define INPUT_SIZE 200
 
+#include <signal.h>
 
 #include "maps_parsing.h"
 #include "breakpoint.h"
@@ -39,4 +40,5 @@ int get_registers(pid_t pid, struct user_regs_struct* regs);
 int set_registers(pid_t pid, struct user_regs_struct* regs);
 int handle_command(char* command);
 int handle_stopped_process(pid_t pid, int status);
+int sigsegv_handler(int signal,siginfo_t si);
 int debug_process(char* elf_path);

@@ -95,8 +95,18 @@ int handle_stopped_process(pid_t pid, int status){
             }
         }
     }
+    else if(signal == SIGSEGV){
+        sigsegv_handler(signal,si);
+    }
     printf("\n");
 }
+
+
+
+int sigsegv_handler(int signal,siginfo_t si){
+    printf("\nProgram received signal SIGSEGV, Segmentation fault.\n");
+}
+
 
 
 int debug_process(char* elf_path){

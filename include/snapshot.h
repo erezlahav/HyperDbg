@@ -12,6 +12,7 @@ typedef struct{
     long start;
     size_t size;
     char dirty_bit;
+    void* data;
 }page;
 
 typedef struct{

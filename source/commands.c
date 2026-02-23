@@ -174,6 +174,5 @@ int print_backtrace(int argc,char** argv){
 
 
 int exit_debugger(int argc,char** argv){
-    printf("in exit\n");
     exit(0);
 }

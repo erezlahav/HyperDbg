@@ -12,3 +12,6 @@ long remote_syscall(
     long arg4,
     long arg5,
     long arg6);
+
+
+int inject_mprotect(long adress,size_t size,int permissions);

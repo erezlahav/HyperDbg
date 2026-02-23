@@ -9,7 +9,9 @@
 #include "debug.h"
 
 #define SYSCALL_OPCODE 0x050f
+#define MPROTECT_SYSCALL_NUMBER 10
 
+extern debugee_process process_to_debug;
 
 
 
@@ -62,4 +64,9 @@ long remote_syscall( //still in maitnence
     
 
 
+}
+
+
+int inject_mprotect(long adress,size_t size,int permissions){
+    remote_syscall(process_to_debug.pid,MPROTECT_SYSCALL_NUMBER,adress,size,permissions,0,0,0);
 }
