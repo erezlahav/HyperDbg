@@ -6,7 +6,7 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <sys/types.h>
-
+#include <sys/mman.h>
 
 #include "commands.h"
 #include "debug.h"
@@ -50,9 +50,6 @@ int run_process(int argc,char** argv){
 }
 
 int continue_proc(int argc,char** argv){
-
-    //save_snapshot();
-    //print_current_snapshot();
     if(process_to_debug.proc_state == LOADED || process_to_debug.proc_state == NOT_LOADED){
         printf("process is not running yet\n");
         return 0;
@@ -167,6 +164,23 @@ int print_backtrace(int argc,char** argv){
     }
 }
 
+
+
+int record(int argc,char** argv){
+    printf("not ready yet\n");
+    if(process_to_debug.proc_state == NOT_LOADED || process_to_debug.proc_state == LOADED){
+        printf("program is not running yet\n");
+        return 0;
+    }
+    save_snapshot();
+    //print_current_snapshot();
+    regions_array* arr_regions = process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions;
+    for(int i = 0; i < arr_regions->regions_count;i++){
+        if(((arr_regions->arr[i].permissions) & WRITE) != 0){
+            inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,PROT_READ);
+        }
+    }
+}
 
 
 

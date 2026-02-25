@@ -33,7 +33,6 @@ long remote_syscall( //still in maitnence
     long arg6)
 {
     struct user_regs_struct saved_regs;
-    printf("in syscall injection\n");
     get_registers(tid,&saved_regs);
 
     struct user_regs_struct syscall_regs = saved_regs;
@@ -70,3 +69,5 @@ long remote_syscall( //still in maitnence
 int inject_mprotect(long adress,size_t size,int permissions){
     remote_syscall(process_to_debug.pid,MPROTECT_SYSCALL_NUMBER,adress,size,permissions,0,0,0);
 }
+
+
