@@ -21,19 +21,20 @@ extern debugee_process process_to_debug;
 //soon...
 
 
-int in_snapshot_range(long adress){
+page* get_page_from_addr(long adress){
     snapshot* snapshots = process_to_debug.snapshots.arr_snapshots;
     int current_index = process_to_debug.snapshots.current_snapshot;
 
-    snapshot* snapshot = &snapshots[current_index];
-    for(int i = 0;i < snapshot->arr_of_regions->regions_count;i++){
-        if( adress >= snapshot->arr_of_regions->arr[i].start || adress <= snapshot->arr_of_regions->arr[i].end){
-            printf("found\n");
-            return 1;
+    snapshot* snapshot = snapshots + current_index;
+    arr_pages* pages_arr = snapshot->pages_array;
+    for(int i = 0;i < pages_arr->cnt_pages;i++){
+        if( adress >= pages_arr->pages[i].start && adress <= pages_arr->pages[i].start + pages_arr->pages[i].size){
+            return &pages_arr->pages[i];
         }
     }
-    return 0;
+    return NULL;
 }
+
 
 int save_snapshot(){
     static int snapshots_saved = 0;
@@ -84,6 +85,7 @@ arr_pages* create_arr_pages(regions_array* regions_arr){
             current_page.start = arr[i].start + offset_start;
             current_page.size = PAGE_SIZE;
             current_page.dirty_bit = 0;
+            current_page.data = NULL;
             memcpy(pages_arr->pages + pages_arr->cnt_pages,&current_page,sizeof(page));
             offset_start += PAGE_SIZE;
             pages_arr->cnt_pages++;
@@ -96,7 +98,7 @@ arr_pages* create_arr_pages(regions_array* regions_arr){
 
 void print_pages(arr_pages* pages){
     for(int i = 0; i < pages->cnt_pages;i++){
-        printf("start : %ld\n",pages->pages[i].start);
+        printf("index : %d, start : %lx\n",i,pages->pages[i].start);
     }
 }
 
@@ -107,8 +109,7 @@ void print_current_snapshot(){
     printf("current tid : %d\n",curr_snapshot.tid);
     print_registers(&curr_snapshot.regs);
     print_mem_regions(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
-    //print_pages(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].pages_array);
-    //inject_mprotect(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions->arr[2].start,135168,PROT_READ);
+    print_pages(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].pages_array);
 }
 
 

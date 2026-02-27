@@ -3,9 +3,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdlib.h>
-#include <sys/wait.h>
 #include <string.h>
 #include <sys/user.h>
+#include <sys/mman.h>
+
 
 #include "debug.h"
 #include "utils.h"
@@ -14,7 +15,7 @@
 #include "breakpoint.h"
 #include "hw_breakpoints.h"
 #include "syscall_injection.h"
-
+#include "snapshot.h"
 
 extern debugee_process process_to_debug;
 
@@ -84,28 +85,41 @@ int handle_stopped_process(pid_t pid, int status){
     get_registers(pid, &regs);
 
 
-    printf("process stopped in adress : %llx",regs.rip);
     siginfo_t si;
     ptrace(PTRACE_GETSIGINFO, process_to_debug.pid, NULL, &si);
     int signal = WSTOPSIG(status);
     if(signal == SIGTRAP){
+        printf("process stopped in adress : %llx",regs.rip);
         breakpoint* bp = get_breakpoint_by_addr(regs.rip-1); //null if no breakpoint match
         if(bp != NULL){
             if((bp->type & INTERNAL) == 0){ //not an internal bp
                 printf(", hit bp number : %d",bp->index);
             }
         }
+        printf("\n");
     }
     else if(signal == SIGSEGV){
         sigsegv_handler(signal,si);
     }
-    printf("\n");
 }
 
 
 
 int sigsegv_handler(int signal,siginfo_t si){
-    printf("\nProgram received signal SIGSEGV, Segmentation fault.\n");
+    long segfault_addr = si.si_addr;
+    page* curr_page = get_page_from_addr(segfault_addr);
+    if(curr_page == NULL){
+        printf("\nProgram received signal SIGSEGV, Segmentation fault.\n");
+        printf("adress of segfault : %lx\n",segfault_addr);
+        return 1;
+    }
+    else{
+        inject_mprotect(curr_page->start,curr_page->size,PROT_READ | PROT_WRITE);
+        ptrace(PTRACE_CONT,process_to_debug.pid,NULL,0);
+        process_to_debug.proc_state = RUNNING;
+    }
+    
+
 }
 
 

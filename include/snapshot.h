@@ -38,7 +38,7 @@ typedef struct{
 
 
 
-int in_snapshot_range(long adress);
+page* get_page_from_addr(long adress);
 int save_snapshot();
 arr_pages* create_arr_pages(regions_array* regions_arr);
 void print_current_snapshot();
