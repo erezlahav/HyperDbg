@@ -35,6 +35,7 @@ const command_table table_commands[] = {
     {"ni",next_instruction,"step over instruction(going over functions and not into)"},
     {"bt",print_backtrace,"printing backtrace of the function"},
     {"record",record,"record and save snapshot for later rewind"},
+    {"rewind",rewind_snapshot,"rewind to the last snapshot saved by record"},
     {NULL,NULL,NULL}
 };
 
@@ -80,7 +81,7 @@ int handle_command(char* command){
 
 int handle_stopped_process(pid_t pid, int status){
     process_to_debug.proc_state = STOPPED;
-    step_over_bp(process_to_debug.pid);
+    //step_over_bp(process_to_debug.pid);
     struct user_regs_struct regs;
     get_registers(pid, &regs);
 
@@ -89,7 +90,7 @@ int handle_stopped_process(pid_t pid, int status){
     ptrace(PTRACE_GETSIGINFO, process_to_debug.pid, NULL, &si);
     int signal = WSTOPSIG(status);
     if(signal == SIGTRAP){
-        printf("process stopped in adress : %llx",regs.rip);
+        printf("process stopped in adress : %llx",regs.rip-1);
         breakpoint* bp = get_breakpoint_by_addr(regs.rip-1); //null if no breakpoint match
         if(bp != NULL){
             if((bp->type & INTERNAL) == 0){ //not an internal bp
@@ -118,8 +119,7 @@ int sigsegv_handler(int signal,siginfo_t si){
         curr_page->data = malloc(PAGE_SIZE);
         remote_copy(curr_page->data,curr_page->start,curr_page->size);
         inject_mprotect(curr_page->start,curr_page->size,PROT_READ | PROT_WRITE);
-        ptrace(PTRACE_CONT,process_to_debug.pid,NULL,0);
-        process_to_debug.proc_state = RUNNING;
+        continue_proc(0,NULL);
     }
     
 

@@ -184,6 +184,12 @@ int record(int argc,char** argv){
 
 
 
+int rewind_snapshot(int argc,char** argv){
+    printf("in rewind\n");
+}
+
+
+
 
 
 

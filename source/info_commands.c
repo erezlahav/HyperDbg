@@ -103,7 +103,6 @@ int info_registers(int argc, char** argv){
 
 
 int info_functions(int argc, char** argv){
-    printf("in info functions!\n");
     for(int i = 0; i < process_to_debug.array_of_symbols->number_of_symbols;i++){
         if(process_to_debug.array_of_symbols->symbols[i].type == FUNC){
             printf("0x%08lx     %s\n",process_to_debug.array_of_symbols->symbols[i].adress,process_to_debug.array_of_symbols->symbols[i].name);
@@ -113,6 +112,5 @@ int info_functions(int argc, char** argv){
 
 
 int info_breakpoints(int argc, char** argv){
-    printf("in info breakpoints\n");
     print_breakpoints();
 }

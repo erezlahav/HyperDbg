@@ -268,13 +268,13 @@ int step_over_bp(pid_t pid){
     long current_opcodes = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,regs.rip-1,NULL); 
     long first_byte = current_opcodes & 0xff;
 
-
     if(bp != NULL && first_byte == 0xcc){
         if(regs.rip-1 != bp->abs_adress){
             return 0;
         }
-        long current_opcodes = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,regs.rip-1,NULL); //read the former instruction to check if there is a 0xCC byte
-        ptrace(PTRACE_POKEDATA,process_to_debug.pid,regs.rip-1,bp->orig_data);
+        unsigned orignal_byte = bp->orig_data & 0xff;
+        long original_opcode = ((current_opcodes >> 8) << 8) | orignal_byte ;
+        ptrace(PTRACE_POKEDATA,process_to_debug.pid,regs.rip-1,original_opcode);
         regs.rip -= 1;
         set_registers(process_to_debug.pid,&regs);
         if((bp->type & TEMP) == TEMP){ //not perm breakpoint
