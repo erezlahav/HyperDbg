@@ -114,6 +114,9 @@ int sigsegv_handler(int signal,siginfo_t si){
         return 1;
     }
     else{
+        curr_page->dirty_bit = 1;
+        curr_page->data = malloc(PAGE_SIZE);
+        remote_copy(curr_page->data,curr_page->start,curr_page->size);
         inject_mprotect(curr_page->start,curr_page->size,PROT_READ | PROT_WRITE);
         ptrace(PTRACE_CONT,process_to_debug.pid,NULL,0);
         process_to_debug.proc_state = RUNNING;

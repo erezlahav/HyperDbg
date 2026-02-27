@@ -42,3 +42,5 @@ page* get_page_from_addr(long adress);
 int save_snapshot();
 arr_pages* create_arr_pages(regions_array* regions_arr);
 void print_current_snapshot();
+int remote_copy(void* local_addr,void* remote_addr,size_t size);
+int remote_write(void* local_addr,void* remote_addr,size_t size);

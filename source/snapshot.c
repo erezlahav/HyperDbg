@@ -1,17 +1,18 @@
+#define _GNU_SOURCE 
 #include <stdio.h>
 #include <sys/ptrace.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/mman.h>
-
+#include <sys/uio.h>
 
 #include "snapshot.h"
 #include "debug.h"
 #include "info_commands.h"
 #include "maps_parsing.h"
 
-#define _GNU_SOURCE
+
 #define MAX_SNAPSHOTS 50
 #define MAX_PAGES 100
 
@@ -76,7 +77,6 @@ arr_pages* create_arr_pages(regions_array* regions_arr){
         int pages_cnt = size/PAGE_SIZE;
         page current_page;
         long offset_start = 0;
-        //printf("size : %lx\naligned size : %lx\npages : %d\n",size,aligned_size,pages_cnt);
         for(int j = 0; j < pages_cnt;j++){
             if(pages_arr->cnt_pages >= max_pages){
                 pages_arr->pages = realloc(pages_arr->pages, (max_pages + MAX_PAGES) * sizeof(page));
@@ -111,6 +111,43 @@ void print_current_snapshot(){
     print_mem_regions(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
     print_pages(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].pages_array);
 }
+
+
+
+int remote_copy(void* local_addr,void* remote_addr,size_t size){
+    struct iovec local_iov = { local_addr, size };
+    struct iovec remote_iov = { remote_addr, size };
+    ssize_t n = process_vm_readv(process_to_debug.pid, &local_iov, 1, &remote_iov, 1, 0);
+    if (n == -1) {
+        perror("process_vm_readv");
+        return 0;
+    }
+
+    if ((size_t)n != size) {
+        fprintf(stderr, "Partial copy: %zd/%zu bytes\n", n, size);
+        return 0;
+    }
+    return 1;
+}
+
+
+int remote_write(void* local_addr,void* remote_addr,size_t size){
+    struct iovec local_iov = { local_addr, size };
+    struct iovec remote_iov = { remote_addr, size };
+    ssize_t n = process_vm_writev(process_to_debug.pid, &local_iov, 1, &remote_iov, 1, 0);
+    if (n == -1) {
+        perror("process_vm_readv");
+        return 0;
+    }
+
+    if ((size_t)n != size) {
+        fprintf(stderr, "Partial copy: %zd/%zu bytes\n", n, size);
+        return 0;
+    }
+    return 1;
+}
+
+
 
 
 
