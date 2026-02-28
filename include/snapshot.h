@@ -44,3 +44,4 @@ arr_pages* create_arr_pages(regions_array* regions_arr);
 void print_current_snapshot();
 int remote_copy(void* local_addr,void* remote_addr,size_t size);
 int remote_write(void* local_addr,void* remote_addr,size_t size);
+int restore_pages(arr_pages* pages_arr);

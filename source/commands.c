@@ -167,13 +167,11 @@ int print_backtrace(int argc,char** argv){
 
 
 int record(int argc,char** argv){
-    printf("not ready yet\n");
     if(process_to_debug.proc_state == NOT_LOADED || process_to_debug.proc_state == LOADED){
         printf("program is not running yet\n");
         return 0;
     }
     save_snapshot();
-    //print_current_snapshot();
     regions_array* arr_regions = process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions;
     for(int i = 0; i < arr_regions->regions_count;i++){
         if(((arr_regions->arr[i].permissions) & WRITE) != 0){
@@ -185,7 +183,21 @@ int record(int argc,char** argv){
 
 
 int rewind_snapshot(int argc,char** argv){
-    printf("in rewind\n");
+    if(process_to_debug.proc_state == NOT_LOADED || process_to_debug.proc_state == LOADED){
+        printf("program is not running yet\n");
+        return 0;
+    }
+    snapshot* snapshots = process_to_debug.snapshots.arr_snapshots;
+    int current_index = process_to_debug.snapshots.current_snapshot;
+    if(current_index == -1){
+        printf("no snapshots saved yet\n");
+        return 0;
+    }
+    struct user_regs_struct former_regs = snapshots->regs;
+    ptrace(PTRACE_SETREGS,process_to_debug.pid,0,&former_regs);
+    snapshot* snapshot = snapshots + current_index;
+    arr_pages* pages_arr = snapshot->pages_array;
+    restore_pages(pages_arr);
 }
 
 
