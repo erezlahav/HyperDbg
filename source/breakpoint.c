@@ -264,25 +264,34 @@ int delete_breakpoint(int index){
 int step_over_bp(pid_t pid){
     struct user_regs_struct regs;
     get_registers(process_to_debug.pid, &regs);
+    long bp_rip = regs.rip-1;
     breakpoint* bp = get_breakpoint_by_addr(regs.rip-1);
-    long current_opcodes = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,regs.rip-1,NULL); 
+    long current_opcodes = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,bp_rip,NULL); 
     long first_byte = current_opcodes & 0xff;
 
     if(bp != NULL && first_byte == 0xcc){
-        if(regs.rip-1 != bp->abs_adress){
+        if(bp_rip != bp->abs_adress){
             return 0;
         }
         unsigned orignal_byte = bp->orig_data & 0xff;
         long original_opcode = ((current_opcodes >> 8) << 8) | orignal_byte ;
-        ptrace(PTRACE_POKEDATA,process_to_debug.pid,regs.rip-1,original_opcode);
+        ptrace(PTRACE_POKEDATA,process_to_debug.pid,bp_rip,original_opcode);
         regs.rip -= 1;
         set_registers(process_to_debug.pid,&regs);
-        if((bp->type & TEMP) == TEMP){ //not perm breakpoint
+        int status;
+
+        if((bp->type & TEMP) == TEMP){ //not temporary breakpoint
             ptrace(PTRACE_SINGLESTEP,process_to_debug.pid,NULL,0);
-            int status;
             waitpid(process_to_debug.pid, &status,0);
             if(WIFSTOPPED(status)){
                 delete_breakpoint(bp->index);
+            }
+        }
+        else{ //permanent breakpoint
+            ptrace(PTRACE_SINGLESTEP,process_to_debug.pid,NULL,0);
+            waitpid(process_to_debug.pid, &status,0);
+            if(WIFSTOPPED(status)){
+                ptrace(PTRACE_POKEDATA,process_to_debug.pid,bp_rip,current_opcodes);
             }
         }
         return 1;
