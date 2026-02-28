@@ -188,6 +188,7 @@ int rewind_snapshot(int argc,char** argv){
         return 0;
     }
     snapshot* snapshots = process_to_debug.snapshots.arr_snapshots;
+    regions_array* arr_regions = process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions;
     int current_index = process_to_debug.snapshots.current_snapshot;
     if(current_index == -1){
         printf("no snapshots saved yet\n");
@@ -198,6 +199,19 @@ int rewind_snapshot(int argc,char** argv){
     snapshot* snapshot = snapshots + current_index;
     arr_pages* pages_arr = snapshot->pages_array;
     restore_pages(pages_arr);
+    
+    if(process_to_debug.snapshots.current_snapshot == 0){ //no more snapshots
+        for(int i = 0; i < arr_regions->regions_count;i++){
+            if(((arr_regions->arr[i].permissions) & WRITE) != 0){
+                inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,PROT_WRITE);
+            }
+        }
+    }
+
+    free(snapshots->pages_array->pages);
+    free(snapshots->pages_array);
+    free(snapshots->arr_of_regions);
+    process_to_debug.snapshots.current_snapshot--;
 }
 
 

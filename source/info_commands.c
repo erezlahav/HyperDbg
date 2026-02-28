@@ -11,6 +11,7 @@ info_commands functions_info[] = {
     {"registers",info_registers,"info all the current thread registers"},
     {"functions",info_functions,"info all functions"},
     {"breakpoints",info_breakpoints,"info all breakpoints"},
+    {"snapshots",info_snapshots,"info all snapshots"},
     {NULL,NULL,NULL}
 };
 
@@ -103,6 +104,9 @@ int info_registers(int argc, char** argv){
 
 
 int info_functions(int argc, char** argv){
+    if(process_to_debug.array_of_symbols->number_of_symbols == 0){
+        printf("no symbols\n");
+    }
     for(int i = 0; i < process_to_debug.array_of_symbols->number_of_symbols;i++){
         if(process_to_debug.array_of_symbols->symbols[i].type == FUNC){
             printf("0x%08lx     %s\n",process_to_debug.array_of_symbols->symbols[i].adress,process_to_debug.array_of_symbols->symbols[i].name);
@@ -113,4 +117,8 @@ int info_functions(int argc, char** argv){
 
 int info_breakpoints(int argc, char** argv){
     print_breakpoints();
+}
+
+int info_snapshots(int argc, char** argv){
+    printf("in info snapshots\n");
 }
