@@ -30,7 +30,10 @@ typedef struct{
     uint16_t number_of_symbols;
 }symbols_array;
 
+
+
 Elf64_Ehdr* get_elf_header(FILE* elf_file_ptr);
+int is_elf64(FILE* elf_ptr);
 Elf64_Addr get_entry_point(Elf64_Ehdr* elf_header);
 bool get_pie_status(FILE* elf_file_ptr);
 Elf64_Phdr* get_program_headers(Elf64_Ehdr* elf_header,FILE* elf_file_ptr);

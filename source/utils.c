@@ -75,14 +75,24 @@ char* get_elf_path_by_pid(pid_t pid){
 
 
 char* get_full_path(char* path){
+    int path_len = strlen(path);
+    if(path_len >= MAX_PATH_SIZE){
+        printf("path to long\n");
+        return NULL;
+    }
     char* full_path = malloc(MAX_PATH_SIZE);
     char copy_path[MAX_PATH_SIZE];
-    strncpy(copy_path,path,sizeof(copy_path));
+    strncpy(copy_path,path,path_len);
+    copy_path[path_len] = '\x00';
     FILE* file_ptr = fopen(path,"rb");
     if(file_ptr != NULL){
         if(path[0] == '.'){
             getcwd(full_path,MAX_PATH_SIZE);
             strcat(full_path,copy_path+1);
+        }
+        else{
+            strncpy(full_path,copy_path,path_len);
+            full_path[path_len] = '\x00';
         }
         return full_path;
     }

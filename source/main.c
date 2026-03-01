@@ -37,11 +37,17 @@ int main(int argc,char* argv[],char* envp[]){
         process_to_debug.pid = -1;
         elf_target_ptr = fopen(process_to_debug.elf_path,"rb");
         if(elf_target_ptr == NULL){
+            printf("path : %s\n",process_to_debug.elf_path);
             printf("fopen failed!\n");
             exit(0);
         }
+
+        if(!is_elf64(elf_target_ptr)){
+            printf("error, target file is not elf 64 bit\n");
+            exit(0);
+        }
         process_to_debug.PIE = get_pie_status(elf_target_ptr);
-        process_to_debug.text_segment_offset_va = get_loading_vaddr_of_text_segment(elf_target_ptr);
+        process_to_debug.text_segment_offset_va = get_loading_vaddr_of_text_segment(elf_target_ptr); //bug
         process_to_debug.array_of_symbols = get_symbols_from_file(elf_target_ptr);
         fclose(elf_target_ptr);
 
@@ -65,6 +71,10 @@ int main(int argc,char* argv[],char* envp[]){
         elf_target_ptr = fopen(process_to_debug.elf_path,"rb");
         if(elf_target_ptr == NULL){
             printf("fopen failed!\n");
+            exit(0);
+        }
+        if(!is_elf64(elf_target_ptr)){
+            printf("error, target file is not elf 64 bit\n");
             exit(0);
         }
         process_to_debug.PIE = get_pie_status(elf_target_ptr);

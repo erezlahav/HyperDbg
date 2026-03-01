@@ -11,6 +11,7 @@
 
 extern debugee_process process_to_debug;
 
+
 Elf64_Ehdr* get_elf_header(FILE* elf_file_ptr){
     Elf64_Ehdr* elf_header = malloc(sizeof(Elf64_Ehdr));
     fseek(elf_file_ptr,0,SEEK_SET);
@@ -18,6 +19,33 @@ Elf64_Ehdr* get_elf_header(FILE* elf_file_ptr){
     fseek(elf_file_ptr,0,SEEK_SET);
     return elf_header;
 }
+
+
+
+int is_elf64(FILE* elf_ptr) {
+
+
+    Elf64_Ehdr* header = get_elf_header(elf_ptr);
+
+
+    if (header->e_ident[EI_MAG0] != ELFMAG0 ||
+        header->e_ident[EI_MAG1] != ELFMAG1 ||
+        header->e_ident[EI_MAG2] != ELFMAG2 ||
+        header->e_ident[EI_MAG3] != ELFMAG3)
+        return 0;
+
+
+    if (header->e_ident[EI_CLASS] != ELFCLASS64)
+        return 0;
+
+
+    if (header->e_type != ET_EXEC && header->e_type != ET_DYN)
+        return 0;
+
+    return 1; 
+}
+
+
 
 
 Elf64_Addr get_entry_point(Elf64_Ehdr* elf_header){
