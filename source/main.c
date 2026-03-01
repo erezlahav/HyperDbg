@@ -12,7 +12,7 @@
 #include "elf_parser.h"
 #include "utils.h"
 #include "breakpoint.h"
-#include "dwarf_parser.h"
+
 #define SIZE_OF_PATH 150
 #define MAX_AMOUNT_OF_BREAKPOINTS 100
 

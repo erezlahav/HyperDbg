@@ -15,7 +15,8 @@
 #include "elf_parser.h"
 #include "disassembly.h"
 #include "utils.h"
-#include "snapshot.h"
+#include "rewind.h"
+
 
 extern debugee_process process_to_debug;
 int run_process(int argc,char** argv){

@@ -7,7 +7,7 @@
 #include <sys/mman.h>
 #include <sys/uio.h>
 
-#include "snapshot.h"
+#include "rewind.h"
 #include "debug.h"
 #include "info_commands.h"
 #include "maps_parsing.h"

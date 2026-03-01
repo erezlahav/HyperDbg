@@ -6,7 +6,7 @@
 #include "maps_parsing.h"
 #include "breakpoint.h"
 #include "elf_parser.h"
-#include "snapshot.h"
+#include "rewind.h"
 
 typedef struct{
     char* command;

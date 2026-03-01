@@ -15,7 +15,7 @@
 #include "breakpoint.h"
 #include "hw_breakpoints.h"
 #include "syscall_injection.h"
-#include "snapshot.h"
+#include "rewind.h"
 
 extern debugee_process process_to_debug;
 
