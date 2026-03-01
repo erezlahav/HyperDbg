@@ -110,12 +110,17 @@ void print_breakpoint(breakpoint* bp){
 }
 
 void print_breakpoints(){
+    if(process_to_debug.array_of_breakpoints.number_of_breakpoints == 0){
+        printf("no breakpoints yet\n");
+        return 0;
+    }
     for(int i = 0; i < process_to_debug.array_of_breakpoints.number_of_breakpoints;i++){
         breakpoint current_breakpoint = process_to_debug.array_of_breakpoints.arr_breakpoints[i];
         if((current_breakpoint.type & INTERNAL) == 0){
             print_breakpoint(&current_breakpoint);
         }
     }
+    return 1;
 }
 
 

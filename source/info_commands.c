@@ -120,5 +120,11 @@ int info_breakpoints(int argc, char** argv){
 }
 
 int info_snapshots(int argc, char** argv){
-    printf("in info snapshots\n");
+    if(process_to_debug.snapshots.current_snapshot == -1){
+        printf("no snapshots yet\n");
+        return 0;
+    }
+    for(int i = 0; i <= process_to_debug.snapshots.current_snapshot;i++){
+        printf("snapshot index : %d\n",i);
+    }
 }

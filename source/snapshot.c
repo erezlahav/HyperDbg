@@ -25,7 +25,9 @@ extern debugee_process process_to_debug;
 page* get_page_from_addr(long adress){
     snapshot* snapshots = process_to_debug.snapshots.arr_snapshots;
     int current_index = process_to_debug.snapshots.current_snapshot;
-
+    if(current_index == -1){
+        return NULL;
+    }
     snapshot* snapshot = snapshots + current_index;
     arr_pages* pages_arr = snapshot->pages_array;
     for(int i = 0;i < pages_arr->cnt_pages;i++){
