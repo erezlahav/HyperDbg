@@ -94,20 +94,26 @@ char* get_full_path(char* path){
     return full_path;
 }
 
-char* get_full_path_from_envs(char** nullble_env_paths,char* target_file){
-    char slash[2];
-    strcpy(slash,"/");
-    char* file_name = strcat(slash,target_file);
-    char* full_path;
-    char* path_to_return;
+char* get_full_path_from_envs(char** nullable_env_paths, char* target_file) {
     FILE* ptr_to_file;
-    for(int i = 0; nullble_env_paths[i] != NULL;i++){
-        full_path = strcat(nullble_env_paths[i],file_name);
-        ptr_to_file = fopen(full_path,"rb");
-        if(ptr_to_file != NULL){
-            return full_path;
+    char* full_path = malloc(MAX_PATH_SIZE); 
+
+    if (!full_path) {
+        perror("malloc failed");
+        return NULL;
+    }
+
+    for (int i = 0; nullable_env_paths[i] != NULL; i++) {
+        snprintf(full_path, MAX_PATH_SIZE, "%s/%s", nullable_env_paths[i], target_file);
+
+        ptr_to_file = fopen(full_path, "rb");
+        if (ptr_to_file != NULL) {
+            fclose(ptr_to_file); 
+            return full_path; 
         }
     }
+
+    free(full_path); 
     return NULL;
 }
 
