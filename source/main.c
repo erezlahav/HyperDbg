@@ -26,7 +26,7 @@ int main(int argc,char* argv[],char* envp[]){
     }
     FILE* elf_target_ptr = NULL;
 
-    process_to_debug.snapshots.current_snapshot = -1;
+    process_to_debug.current_snapshot = NULL;
 
     process_to_debug.array_of_breakpoints.number_of_breakpoints = 0;
     process_to_debug.array_of_breakpoints.arr_breakpoints = malloc(sizeof(breakpoint)* MAX_AMOUNT_OF_BREAKPOINTS);

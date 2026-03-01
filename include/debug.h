@@ -30,7 +30,7 @@ typedef struct{
     long text_segment_offset_va;
     regions_array array_of_regions;
     breakpoints_array array_of_breakpoints;
-    array_snapshots snapshots;
+    snapshot* current_snapshot;
     symbols_array* array_of_symbols;
 }debugee_process;
 

@@ -11,7 +11,6 @@ info_commands functions_info[] = {
     {"registers",info_registers,"info all the current thread registers"},
     {"functions",info_functions,"info all functions"},
     {"breakpoints",info_breakpoints,"info all breakpoints"},
-    {"snapshots",info_snapshots,"info all snapshots"},
     {NULL,NULL,NULL}
 };
 
@@ -119,12 +118,3 @@ int info_breakpoints(int argc, char** argv){
     print_breakpoints();
 }
 
-int info_snapshots(int argc, char** argv){
-    if(process_to_debug.snapshots.current_snapshot == -1){
-        printf("no snapshots yet\n");
-        return 0;
-    }
-    for(int i = 0; i <= process_to_debug.snapshots.current_snapshot;i++){
-        printf("snapshot index : %d\n",i);
-    }
-}

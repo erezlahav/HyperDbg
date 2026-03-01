@@ -11,7 +11,7 @@
 #include "debug.h"
 #include "info_commands.h"
 #include "maps_parsing.h"
-
+#include "syscall_injection.h"
 
 #define MAX_SNAPSHOTS 50
 #define MAX_PAGES 100
@@ -23,12 +23,10 @@ extern debugee_process process_to_debug;
 
 
 page* get_page_from_addr(long adress){
-    snapshot* snapshots = process_to_debug.snapshots.arr_snapshots;
-    int current_index = process_to_debug.snapshots.current_snapshot;
-    if(current_index == -1){
+    snapshot* snapshot = process_to_debug.current_snapshot;
+    if(snapshot == NULL){
         return NULL;
     }
-    snapshot* snapshot = snapshots + current_index;
     arr_pages* pages_arr = snapshot->pages_array;
     for(int i = 0;i < pages_arr->cnt_pages;i++){
         if( adress >= pages_arr->pages[i].start && adress <= pages_arr->pages[i].start + pages_arr->pages[i].size){
@@ -40,28 +38,23 @@ page* get_page_from_addr(long adress){
 
 
 int save_snapshot(){
-    static int snapshots_saved = 0;
-    if(process_to_debug.proc_state == NOT_LOADED || process_to_debug.proc_state == LOADED){
-        printf("not good\n");
+   if(process_to_debug.current_snapshot != NULL){
+        printf("The process is already being recorded.  Use delete record to stop delete the recording first.\n");
         return 0;
-    }
-    if(snapshots_saved == 0){
-        process_to_debug.snapshots.arr_snapshots = malloc(sizeof(snapshot) * MAX_SNAPSHOTS);
-    }
-
-    process_to_debug.snapshots.current_snapshot++;
+   }
+   else{
+        process_to_debug.current_snapshot = malloc(sizeof(snapshot));
+   }
     struct user_regs_struct regs;
     get_registers(process_to_debug.pid, &regs);
-    process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].tid = gettid();
-    process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].regs = regs;
+    
+    process_to_debug.current_snapshot->tid = gettid();
+    process_to_debug.current_snapshot->regs = regs;
 
-    process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions = malloc(sizeof(regions_array));
-    parse_maps(process_to_debug.pid,process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
-    arr_pages* pages = create_arr_pages(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
-    process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].pages_array = pages;
-
-
-    snapshots_saved++;
+    process_to_debug.current_snapshot->arr_of_regions = malloc(sizeof(regions_array));
+    parse_maps(process_to_debug.pid,process_to_debug.current_snapshot->arr_of_regions);
+    arr_pages* pages = create_arr_pages(process_to_debug.current_snapshot->arr_of_regions);
+    process_to_debug.current_snapshot->pages_array = pages;
 }
 
 
@@ -106,12 +99,11 @@ void print_pages(arr_pages* pages){
 
 
 void print_current_snapshot(){
-    printf("current index  : %d\n",process_to_debug.snapshots.current_snapshot);
-    snapshot curr_snapshot = process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot];
-    printf("current tid : %d\n",curr_snapshot.tid);
-    print_registers(&curr_snapshot.regs);
-    print_mem_regions(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions);
-    print_pages(process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].pages_array);
+    snapshot* curr_snapshot = process_to_debug.current_snapshot;
+    printf("current tid : %d\n",curr_snapshot->tid);
+    print_registers(&curr_snapshot->regs);
+    print_mem_regions(curr_snapshot->arr_of_regions);
+    print_pages(curr_snapshot->pages_array);
 }
 
 
@@ -159,5 +151,25 @@ int restore_pages(arr_pages* pages_arr){
     }
 }
 
+int delete_record(){
+    snapshot* snapshot = process_to_debug.current_snapshot;
+    if(snapshot == NULL){
+        printf("no snapshots saved yet\n");
+        return 0;
+    }
 
+    regions_array* arr_regions = snapshot->arr_of_regions;
+
+    for(int i = 0; i < arr_regions->regions_count;i++){
+        if(((arr_regions->arr[i].permissions) & WRITE) != 0){
+            inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,PROT_WRITE);
+        }
+    }
+
+    free(snapshot->pages_array->pages);
+    free(snapshot->pages_array);
+    free(snapshot->arr_of_regions);
+    free(snapshot);
+    process_to_debug.current_snapshot = NULL;
+}
 

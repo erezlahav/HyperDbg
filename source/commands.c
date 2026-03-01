@@ -128,6 +128,9 @@ int cmd_delete(int argc,char** argv){
                 if(!delete_breakpoint(bp_index)){
                     printf("no breakpoint number 0\n");
                 }
+            }
+            else if(strcmp(argv[1],"record") == 0){
+                delete_record();
             }            
         }
         else{
@@ -171,8 +174,13 @@ int record(int argc,char** argv){
         printf("program is not running yet\n");
         return 0;
     }
+    if(process_to_debug.current_snapshot != NULL){
+        printf("The process is already being recorded.  Use delete record to stop delete the recording first.\n");
+        return 0;
+    }
     save_snapshot();
-    regions_array* arr_regions = process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions;
+    snapshot* snapshot = process_to_debug.current_snapshot;
+    regions_array* arr_regions = snapshot->arr_of_regions;
     for(int i = 0; i < arr_regions->regions_count;i++){
         if(((arr_regions->arr[i].permissions) & WRITE) != 0){
             inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,PROT_READ);
@@ -187,31 +195,16 @@ int rewind_snapshot(int argc,char** argv){
         printf("program is not running yet\n");
         return 0;
     }
-    snapshot* snapshots = process_to_debug.snapshots.arr_snapshots;
-    regions_array* arr_regions = process_to_debug.snapshots.arr_snapshots[process_to_debug.snapshots.current_snapshot].arr_of_regions;
-    int current_index = process_to_debug.snapshots.current_snapshot;
-    if(current_index == -1){
+    snapshot* snapshot = process_to_debug.current_snapshot;
+    if(snapshot == NULL){
         printf("no snapshots saved yet\n");
         return 0;
     }
-    struct user_regs_struct former_regs = snapshots->regs;
+    struct user_regs_struct former_regs = snapshot->regs;
     ptrace(PTRACE_SETREGS,process_to_debug.pid,0,&former_regs);
-    snapshot* snapshot = snapshots + current_index;
     arr_pages* pages_arr = snapshot->pages_array;
     restore_pages(pages_arr);
-    
-    if(process_to_debug.snapshots.current_snapshot == 0){ //no more snapshots
-        for(int i = 0; i < arr_regions->regions_count;i++){
-            if(((arr_regions->arr[i].permissions) & WRITE) != 0){
-                inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,PROT_WRITE);
-            }
-        }
-    }
-
-    free(snapshots->pages_array->pages);
-    free(snapshots->pages_array);
-    free(snapshots->arr_of_regions);
-    process_to_debug.snapshots.current_snapshot--;
+    delete_record();
 }
 
 

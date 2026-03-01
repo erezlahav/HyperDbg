@@ -30,12 +30,6 @@ typedef struct{
 
 
 
-typedef struct{
-    snapshot* arr_snapshots;
-    int current_snapshot;
-}array_snapshots;
-
-
 
 
 page* get_page_from_addr(long adress);
@@ -45,3 +39,4 @@ void print_current_snapshot();
 int remote_copy(void* local_addr,void* remote_addr,size_t size);
 int remote_write(void* local_addr,void* remote_addr,size_t size);
 int restore_pages(arr_pages* pages_arr);
+int delete_record();
