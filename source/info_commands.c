@@ -108,7 +108,7 @@ int info_functions(int argc, char** argv){
     }
     for(int i = 0; i < process_to_debug.array_of_symbols->number_of_symbols;i++){
         if(process_to_debug.array_of_symbols->symbols[i].type == FUNC){
-            printf("0x%08lx     %s\n",process_to_debug.array_of_symbols->symbols[i].adress,process_to_debug.array_of_symbols->symbols[i].name);
+            printf("0x%016lx     %s\n",process_to_debug.array_of_symbols->symbols[i].adress,process_to_debug.array_of_symbols->symbols[i].name);
         }
     }
 }

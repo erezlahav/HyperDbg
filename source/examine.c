@@ -109,7 +109,7 @@ void print_data_array(long adress, data_read* data_read_ptr,int size,const char*
     int data_index = 0;
     __uint64_t mask = get_mask_by_size(size);
     while(data_index < data_read_ptr->bytes_read){
-        printf("%lx: ",adress + data_index);
+        printf("0x%016lx: ",adress + data_index);
         printf(format_string,*((long*)(data_read_ptr->data+data_index)) & mask); 
         printf("\n");
         data_index += size;
@@ -125,10 +125,10 @@ static const char* get_format_string(enum format FORMAT, int size)
     case HEXADECIMAL:
         switch (size)
         {
-        case 1: return "%02x";
-        case 2: return "%04x";
-        case 4: return "%08x";
-        case 8: return "%016lx";
+        case 1: return "0x%02x";
+        case 2: return "0x%04x";
+        case 4: return "0x%08x";
+        case 8: return "0x%016lx";
         }
         break;
 

@@ -18,6 +18,21 @@ My debugger is a GDB-like debugger written in C for Linux x86_64, supporting bre
 
 ---
 
+# Reverse Debugging Explanation:
+first of all im extractning the writble regions of the program like stack,data,heap and more...
+than i inject the syscall MPROTECT to the debugged process on the writble pages of the program and change them to READONLY
+than im saving the registers of the program of the current snapshot
+now everytime the process tries to change data of pages from stack,data,heap and more... he gets a page fault and the signal SIGSEGV is sent to him by the kernel
+than i catch the SIGSEGV, identify the adress of the SIGSEGV from the CR2 register and identify the correct page
+after that i copy the data of the page with process_vm_readv function, and than i know that i need to resore this page data at rewind
+than when "rewind" command is being called i restore the last snapshot registers and write only the **changed pages** data to the process, and injecting MPROTECT syscall to reset the pages permissions
+this way is pretty much linux COW implementation and is helping me to rewind to snap shot very effectively
+
+
+
+
+
+
 # Commands
 
 ### Execution Control

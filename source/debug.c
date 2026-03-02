@@ -90,7 +90,7 @@ int handle_stopped_process(pid_t pid, int status){
     //step_over_bp(process_to_debug.pid);
 
     if(signal == SIGTRAP){
-        printf("process stopped in adress : %llx",bp_rip);
+        printf("process stopped in adress : 0x%016lx",bp_rip);
         breakpoint* bp = get_breakpoint_by_addr(bp_rip); //null if no breakpoint match
         if(bp != NULL){
             if((bp->type & INTERNAL) == 0){ //not an internal bp
@@ -111,7 +111,7 @@ int sigsegv_handler(int signal,siginfo_t si){
     page* curr_page = get_page_from_addr(segfault_addr);
     if(curr_page == NULL){
         printf("\nProgram received signal SIGSEGV, Segmentation fault.\n");
-        printf("adress of segfault : %lx\n",segfault_addr);
+        printf("adress of segfault : 0x%016lx\n",segfault_addr);
         return 1;
     }
     else{

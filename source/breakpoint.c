@@ -106,7 +106,23 @@ int resolve_breakpoints(){
 }
 
 void print_breakpoint(breakpoint* bp){
-    printf("breakpoint %d : adress : %lx, state : %d\n",bp->index,bp->abs_adress,bp->state);
+    printf("breakpoint %d : adress : 0x%016lx, state : ",bp->index,bp->abs_adress);
+
+    switch (bp->state)
+    {
+    case 0:
+        printf("PENDING\n");
+        break;
+    case 1:
+        printf("RESOLVED\n");
+        break;
+    case 2:
+        printf("FAILED\n");
+        break;
+    default:
+        printf("unknown\n");
+        break;
+    }
 }
 
 void print_breakpoints(){
