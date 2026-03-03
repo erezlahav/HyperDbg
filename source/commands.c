@@ -7,6 +7,8 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <string.h>
+#include <errno.h>
 
 #include "commands.h"
 #include "debug.h"
@@ -168,6 +170,72 @@ int print_backtrace(int argc,char** argv){
     }
 }
 
+
+
+int set(int argc,char** argv){
+    
+    if(process_to_debug.proc_state == NOT_LOADED || process_to_debug.proc_state == LOADED){
+        printf("program is not running yet\n");
+        return 0;
+    }
+    
+
+    if(argv[1] == NULL){
+        printf("Argument required\n");
+        return 0;
+    }
+    long set_val;
+    if(argv[1][0] == '$'){ //register
+        char register_name[5];
+        char* reg_start = argv[1] + 1;
+        int register_name_index = 0;
+        while(reg_start != NULL && (*reg_start != ' ' &&  *reg_start != '=') && register_name_index < sizeof(register_name)){
+            register_name[register_name_index] = *reg_start;
+            register_name_index++;
+            reg_start++;
+        }
+        register_name[register_name_index] = '\x00';
+        if(*reg_start != '=' && strcmp(argv[2],"=") != 0){
+            printf("Expression is not an assignment\n");
+            return 0;
+        }
+        reg_start++;
+        if(*reg_start != '\x00'){ //no spaces
+            errno = 0;
+            if(strncmp(reg_start,"0x",2) == 0) set_val = strtol(reg_start+2,NULL,16);
+            else set_val = strtol(reg_start,NULL,16);
+        }
+
+
+        else if(argv[2] != NULL){
+            char* str_num;
+            errno = 0;
+            if(strcmp(argv[2],"=") == 0) str_num = argv[3];
+            else{str_num = argv[2];}
+
+            if(strncmp(str_num,"0x",2) == 0) set_val = strtol(str_num+2,NULL,16);
+            else set_val = strtol(str_num,NULL,16);
+        }
+
+
+        if(errno != 0){
+            printf("error in value\n");
+            return 0;
+        }
+
+        struct user_regs_struct regs;
+        get_registers(process_to_debug.pid, &regs);   
+        unsigned long* reg_ptr = get_register(&regs,register_name);
+        if(reg_ptr == NULL){
+            printf("invalid register\n");
+            return 0;
+        }
+        *reg_ptr = set_val;
+        set_registers(process_to_debug.pid, &regs);
+
+
+    }
+}
 
 
 int record(int argc,char** argv){

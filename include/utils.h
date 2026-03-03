@@ -4,7 +4,7 @@
 
 
 char** parse_command(char* command,int* argc_out);
-long convert_str_addr_to_long(char* addr);
+unsigned long* get_register(struct user_regs_struct* regs_ptr,char* str_register);
 char* get_elf_path_by_pid(pid_t pid);
 char* get_full_path(char* path);
 char* get_full_path_from_envs(char** nullble_env_paths,char* target_file);

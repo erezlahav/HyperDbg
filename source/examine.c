@@ -47,23 +47,6 @@ static int get_size(char str_size){
 
 
 
-static unsigned long get_register(struct user_regs_struct* regs_ptr,char* str_register,int* status){
-    if (strcmp(str_register, "rip") == 0) return regs_ptr->rip;
-    if (strcmp(str_register, "rax") == 0) return regs_ptr->rax;
-    if (strcmp(str_register, "rbx") == 0) return regs_ptr->rbx;
-    if (strcmp(str_register, "rcx") == 0) return regs_ptr->rcx;
-    if (strcmp(str_register, "rdx") == 0) return regs_ptr->rdx;
-    if (strcmp(str_register, "rsi") == 0) return regs_ptr->rsi;
-    if (strcmp(str_register, "rdi") == 0) return regs_ptr->rdi;
-    if (strcmp(str_register, "rsp") == 0) return regs_ptr->rsp;
-    if (strcmp(str_register, "rbp") == 0) return regs_ptr->rbp;
-
-    *status = -1;
-    return 0;
-}
-
-
-
 
 
 data_read* get_data_array(size_t count, size_t size,long adress){
@@ -160,7 +143,7 @@ int exemine(int argc,char** argv){ // x/[COUNT][SIZE][FORMAT] ADDRESS/REGISTER
     char* first_str = malloc(argv_len+1);
 
     
-    long adress = 0x0; //default no adress
+    unsigned long adress = 0x0; //default no adress
     struct user_regs_struct regs;
     char register_name[5];
     strncpy(first_str,argv[0],argv_len+1);
@@ -175,18 +158,18 @@ int exemine(int argc,char** argv){ // x/[COUNT][SIZE][FORMAT] ADDRESS/REGISTER
 
     if(strcmp(first_str,"x") == 0){ //x ADDRESS case 
         if(argv[1][0] == '$'){ //register case
-            int status = 0;
             ptrace(PTRACE_GETREGS,process_to_debug.pid,NULL,&regs);
             strncpy(register_name,argv[1]+1,sizeof(register_name));
             register_name[sizeof(register_name)] = '\x00';
-            unsigned long register_value = get_register(&regs,register_name,&status);
-            if(!register_value && status == -1){ //error in get registers
+            unsigned long* register_value = get_register(&regs,register_name);
+            if(!register_value){ //error in get registers
                 return 0;
             }
-            adress = register_value;
+            adress = *register_value;
         }
         else{ //adress case
-            adress = convert_str_addr_to_long(argv[1]);
+            if(strncmp(argv[1],"0x",2) == 0) adress = strtol(argv[1]+2,NULL,16);
+            else adress = strtol(argv[1],NULL,16);
         }
 
 
@@ -232,7 +215,6 @@ int exemine(int argc,char** argv){ // x/[COUNT][SIZE][FORMAT] ADDRESS/REGISTER
         }
         
         if(argv[1][0] == '$'){ //register case
-            int status = 0;
             ptrace(PTRACE_GETREGS,process_to_debug.pid,NULL,&regs);
             char* reg_start = argv[1] + 1;
             int register_name_index = 0;
@@ -247,14 +229,15 @@ int exemine(int argc,char** argv){ // x/[COUNT][SIZE][FORMAT] ADDRESS/REGISTER
                 offset = strtol(reg_start+1,NULL,10);
                 if(errno == ERANGE) offset = 0;
             }
-            unsigned long register_value = get_register(&regs,register_name,&status);
-            if(!register_value && status == -1){ //error in get registers
+            unsigned long* register_value = get_register(&regs,register_name);
+            if(!register_value){ //error in get registers
                 return 0;
             }
-            adress = register_value + offset;
+            adress = *register_value + offset;
         }
-        else{ //adress case
-            adress = convert_str_addr_to_long(argv[1]);
+        else { //adress case
+            if(strncmp(argv[1],"0x",2) == 0) adress = strtol(argv[1]+2,NULL,16);
+            else adress = strtol(argv[1],NULL,16);
         }
         if(get_breakpoint_by_addr(adress-1)) adress--; //not null
 

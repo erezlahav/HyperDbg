@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <sys/user.h>
 
 #include "utils.h"
 #include "debug.h"
@@ -34,24 +34,24 @@ char** parse_command(char* command,int* argc_out){
 }
 
 
+unsigned long* get_register(struct user_regs_struct* regs_ptr,char* str_register){
+    if (strcmp(str_register, "rip") == 0) return &regs_ptr->rip;
+    if (strcmp(str_register, "rax") == 0) return &regs_ptr->rax;
+    if (strcmp(str_register, "rbx") == 0) return &regs_ptr->rbx;
+    if (strcmp(str_register, "rcx") == 0) return &regs_ptr->rcx;
+    if (strcmp(str_register, "rdx") == 0) return &regs_ptr->rdx;
+    if (strcmp(str_register, "rsi") == 0) return &regs_ptr->rsi;
+    if (strcmp(str_register, "rdi") == 0) return &regs_ptr->rdi;
+    if (strcmp(str_register, "rsp") == 0) return &regs_ptr->rsp;
+    if (strcmp(str_register, "rbp") == 0) return &regs_ptr->rbp;
 
 
-
-
-
-long convert_str_addr_to_long(char* addr){
-    long adress;
-    char first_two_bytes[3];
-    strncpy(first_two_bytes,addr,2);
-    first_two_bytes[2] = '\x00';
-    if(strcmp(first_two_bytes,"0x") == 0 || strcmp(first_two_bytes,"0X") == 0){ //hexadecimal adress
-        adress = strtol(addr,NULL,16);
-    }
-    else{
-        adress = strtol(addr,NULL,10);
-    }
-    return adress;
+    return NULL;
 }
+
+
+
+
 
 char* get_elf_path_by_pid(pid_t pid){
     char* elf_path = malloc(MAX_PATH_SIZE);

@@ -34,6 +34,7 @@ const command_table table_commands[] = {
     {"si",step_into,"step into instruction(executes one instruction)"},
     {"ni",next_instruction,"step over instruction(going over functions and not into)"},
     {"bt",print_backtrace,"printing backtrace of the function"},
+    {"set",set,"set value of register"},
     {"record",record,"record and save snapshot for later rewind"},
     {"rewind",rewind_snapshot,"rewind to the last snapshot saved by record"},
     {NULL,NULL,NULL}
