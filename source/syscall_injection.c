@@ -32,9 +32,9 @@ long remote_syscall( //still in maitnence
     long arg5,
     long arg6)
 {
+
     struct user_regs_struct saved_regs;
     get_registers(tid,&saved_regs);
-
     struct user_regs_struct syscall_regs = saved_regs;
 
     long original_adress = saved_regs.rip;
@@ -49,25 +49,33 @@ long remote_syscall( //still in maitnence
 
     long original_opcode = ptrace(PTRACE_PEEKDATA,tid,original_adress,0);
 
+
+
+
+
     ptrace(PTRACE_POKEDATA,tid,original_adress,SYSCALL_OPCODE);
     ptrace(PTRACE_SINGLESTEP,tid,NULL,0);
 
     
+
     int status;
     waitpid(tid, &status, 0);
+    handle_stopped_process(tid,status);
+
+    struct user_regs_struct return_registers;
+    ptrace(PTRACE_GETREGS,tid,NULL,&return_registers);
 
 
     ptrace(PTRACE_POKEDATA,tid,original_adress,original_opcode);
     ptrace(PTRACE_SETREGS,tid,NULL,&saved_regs);
-
     
-
+    return return_registers.rax;
 
 }
 
 
 int inject_mprotect(long adress,size_t size,int permissions){
-    remote_syscall(process_to_debug.pid,MPROTECT_SYSCALL_NUMBER,adress,size,permissions,0,0,0);
+    return remote_syscall(process_to_debug.pid,MPROTECT_SYSCALL_NUMBER,adress,size,permissions,0,0,0);
 }
 
 

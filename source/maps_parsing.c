@@ -39,8 +39,12 @@ void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the
         start_addr = strtol(two_adresses[0],NULL,16);
         end_addr = strtol(two_adresses[1],NULL,16);
 
-        if(strstr(segment_name,process_to_debug.elf_path) != NULL && strstr(segment_permissions,"x") != NULL){
-            arr_regions->arr[arr_regions->regions_count].type = BINARY;
+        if(strstr(segment_permissions,"x") != NULL){
+            if(strstr(segment_name,process_to_debug.elf_path) != NULL) arr_regions->arr[arr_regions->regions_count].type = BINARY;
+            else if(strstr(segment_name,"ld-linux") != NULL) arr_regions->arr[arr_regions->regions_count].type = LOADER_CODE;
+            else if(strstr(segment_name,"libc.so") != NULL) arr_regions->arr[arr_regions->regions_count].type = LIBC_CODE;
+
+
             arr_regions->arr[arr_regions->regions_count].start = start_addr;
             arr_regions->arr[arr_regions->regions_count].end = end_addr;
             arr_regions->arr[arr_regions->regions_count].permissions = 0;
@@ -49,28 +53,25 @@ void parse_lines_of_maps(char** lines,regions_array* arr_regions){ //parsing the
             if(strstr(segment_permissions,"r")) arr_regions->arr[arr_regions->regions_count].permissions |= READ;
             arr_regions->regions_count++;
         }
-        else if(strstr(segment_name,process_to_debug.elf_path) != NULL && strstr(segment_permissions,"w") != NULL){
-            arr_regions->arr[arr_regions->regions_count].type = DATA;
-            arr_regions->arr[arr_regions->regions_count].start = start_addr;
-            arr_regions->arr[arr_regions->regions_count].end = end_addr;
-            arr_regions->arr[arr_regions->regions_count].permissions = 0;
-            if(strstr(segment_permissions,"x")) arr_regions->arr[arr_regions->regions_count].permissions |= EXECUTE;
-            if(strstr(segment_permissions,"w")) arr_regions->arr[arr_regions->regions_count].permissions |= WRITE;
-            if(strstr(segment_permissions,"r")) arr_regions->arr[arr_regions->regions_count].permissions |= READ;
-            arr_regions->regions_count++;
-        }
-        else if(strstr(segment_name,"[heap]") != NULL){
-            arr_regions->arr[arr_regions->regions_count].type = HEAP;
-            arr_regions->arr[arr_regions->regions_count].start = start_addr;
-            arr_regions->arr[arr_regions->regions_count].end = end_addr;
-            arr_regions->arr[arr_regions->regions_count].permissions = 0;
-            if(strstr(segment_permissions,"x")) arr_regions->arr[arr_regions->regions_count].permissions |= EXECUTE;
-            if(strstr(segment_permissions,"w")) arr_regions->arr[arr_regions->regions_count].permissions |= WRITE;
-            if(strstr(segment_permissions,"r")) arr_regions->arr[arr_regions->regions_count].permissions |= READ;
-            arr_regions->regions_count++;
-        }
-        else if(strstr(segment_name,"stack") != NULL){
-            arr_regions->arr[arr_regions->regions_count].type = STACK;
+        else if(strstr(segment_permissions,"w") != NULL){
+            if(strstr(segment_name,process_to_debug.elf_path) != NULL){
+                arr_regions->arr[arr_regions->regions_count].type = DATA;
+            }
+            else if(strstr(segment_name,"[heap]") != NULL){
+                arr_regions->arr[arr_regions->regions_count].type = HEAP;
+            }
+            else if(strstr(segment_name,"stack") != NULL){
+                arr_regions->arr[arr_regions->regions_count].type = STACK;
+            }
+            else if(strstr(segment_name,"ld-linux") != NULL){
+                arr_regions->arr[arr_regions->regions_count].type = DATA_LOADER;
+            }
+            else if(strstr(segment_name,"libc") != NULL){
+                arr_regions->arr[arr_regions->regions_count].type = DATA_LIBC;
+            }
+            else{
+                arr_regions->arr[arr_regions->regions_count].type = UNKNOWN;
+            }
             arr_regions->arr[arr_regions->regions_count].start = start_addr;
             arr_regions->arr[arr_regions->regions_count].end = end_addr;
             arr_regions->arr[arr_regions->regions_count].permissions = 0;
@@ -99,6 +100,15 @@ void print_mem_regions(regions_array* arr_regions){
                 break;
             case 3:
                 printf("DATA");
+                break;
+            case 4:
+                printf("DATA_LOADER");
+                break;
+            case 5:
+                printf("DATA_LIBC");
+                break;
+            case 6:
+                printf("UNKNOWN");
                 break;
             
         }

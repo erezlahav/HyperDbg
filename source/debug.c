@@ -16,6 +16,9 @@
 #include "hw_breakpoints.h"
 #include "syscall_injection.h"
 #include "rewind.h"
+#include "syscall_handling.h"
+
+
 
 extern debugee_process process_to_debug;
 
@@ -88,17 +91,19 @@ int handle_stopped_process(pid_t pid, int status){
     struct user_regs_struct regs;
     get_registers(pid, &regs);
     long bp_rip = regs.rip-1;
-    //step_over_bp(process_to_debug.pid);
 
     if(signal == SIGTRAP){
-        printf("process stopped in adress : 0x%016lx",bp_rip);
         breakpoint* bp = get_breakpoint_by_addr(bp_rip); //null if no breakpoint match
         if(bp != NULL){
+            if(((bp->type & SYSCALL)) != 0){
+                syscall_handle(&regs);
+            }
             if((bp->type & INTERNAL) == 0){ //not an internal bp
+                printf("process stopped in adress : 0x%016lx",bp_rip);
                 printf(", hit bp number : %d",bp->index);
+                printf("\n");
             }
         }
-        printf("\n");
     }
     else if(signal == SIGSEGV){
         sigsegv_handler(signal,si);

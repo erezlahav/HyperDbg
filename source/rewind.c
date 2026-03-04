@@ -14,7 +14,7 @@
 #include "syscall_injection.h"
 
 #define MAX_SNAPSHOTS 50
-#define MAX_PAGES 100
+#define MAX_PAGES 200
 
 
 extern debugee_process process_to_debug;
@@ -162,7 +162,10 @@ int delete_record(){
 
     for(int i = 0; i < arr_regions->regions_count;i++){
         if(((arr_regions->arr[i].permissions) & WRITE) != 0){
-            inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,PROT_WRITE);
+            int permissions = PROT_WRITE;
+            if(((arr_regions->arr[i].permissions) & READ) != 0) permissions |= PROT_READ;
+            if(((arr_regions->arr[i].permissions) & EXECUTE) != 0) permissions |= PROT_EXEC;
+            inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
         }
     }
 

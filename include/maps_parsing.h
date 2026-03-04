@@ -18,7 +18,12 @@ typedef enum{
     BINARY,
     HEAP,
     STACK,
-    DATA
+    DATA,
+    DATA_LOADER,
+    DATA_LIBC,
+    LOADER_CODE,
+    LIBC_CODE,
+    UNKNOWN,
 }region_type;
 
 

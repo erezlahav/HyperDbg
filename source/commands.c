@@ -46,6 +46,7 @@ int run_process(int argc,char** argv){
         parse_maps(process_to_debug.pid,&process_to_debug.array_of_regions);
         update_adressing_of_symtab_symbols(process_to_debug.array_of_symbols, process_to_debug.array_of_regions.arr[0].start);
         resolve_breakpoints();
+        put_syscalls_bps();
         ptrace(PTRACE_CONT, process_to_debug.pid, NULL, NULL);
         process_to_debug.proc_state = RUNNING;
     }
@@ -252,7 +253,19 @@ int record(int argc,char** argv){
     regions_array* arr_regions = snapshot->arr_of_regions;
     for(int i = 0; i < arr_regions->regions_count;i++){
         if(((arr_regions->arr[i].permissions) & WRITE) != 0){
-            inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,PROT_READ);
+            int permissions = PROT_READ;
+            if(((arr_regions->arr[i].permissions) & EXECUTE) == 0) permissions |= PROT_EXEC;
+            if(arr_regions->arr[i].type != UNKNOWN){
+                inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
+            }
+            else{
+                for(long j = arr_regions->arr[i].start; j < arr_regions->arr[i].end; j+= PAGE_SIZE){
+                    page* curr_page = get_page_from_addr(j);
+                    curr_page->dirty_bit = 1;
+                    curr_page->data = malloc(PAGE_SIZE);
+                    remote_copy(curr_page->data,curr_page->start,curr_page->size);
+                }
+            }
         }
     }
 }

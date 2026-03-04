@@ -29,6 +29,7 @@ int ptrace_breakpoint(breakpoint* bp){
         long res = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,bp->abs_adress,NULL);
         if (res == -1 && errno != 0) {
             printf("ptrace failed: %s\n", strerror(errno));
+            return 0;
         } 
         bp->orig_data = res;
         long new_instruction_with_cc = (res & 0xffffffffffffff00) | 0xcc;

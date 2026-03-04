@@ -13,7 +13,8 @@ typedef enum{
     SOFTWARE = 1 << 1,
     TEMP = 1 << 2,
     PERM = 1 << 3,
-    INTERNAL = 1 << 4
+    INTERNAL = 1 << 4,
+    SYSCALL = 1 << 5
 }bp_type;
 
 typedef struct{
