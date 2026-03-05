@@ -14,7 +14,9 @@
 #include "breakpoint.h"
 
 #define SIZE_OF_PATH 150
-#define MAX_AMOUNT_OF_BREAKPOINTS 100
+#define MAX_AMOUNT_OF_BREAKPOINTS 50
+#define MAX_AMOUNT_OF_SYSCALL_BREAKPOINTS 2000
+
 
 debugee_process process_to_debug;
 int main(int argc,char* argv[],char* envp[]){
@@ -29,7 +31,11 @@ int main(int argc,char* argv[],char* envp[]){
     process_to_debug.current_snapshot = NULL;
 
     process_to_debug.array_of_breakpoints.number_of_breakpoints = 0;
+    process_to_debug.array_of_breakpoints.number_of_syscall_breakpoints = 0;
     process_to_debug.array_of_breakpoints.arr_breakpoints = malloc(sizeof(breakpoint)* MAX_AMOUNT_OF_BREAKPOINTS);
+    process_to_debug.array_of_breakpoints.syscall_arr_breakpoints = malloc(sizeof(breakpoint)* MAX_AMOUNT_OF_SYSCALL_BREAKPOINTS);
+
+
     if(strcmp(argv[1],"-run") == 0){
         printf("executing -run to process\n");
         process_to_debug.proc_state = NOT_LOADED;

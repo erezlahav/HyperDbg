@@ -130,7 +130,7 @@ int remote_write(void* local_addr,void* remote_addr,size_t size){
     struct iovec remote_iov = { remote_addr, size };
     ssize_t n = process_vm_writev(process_to_debug.pid, &local_iov, 1, &remote_iov, 1, 0);
     if (n == -1) {
-        perror("process_vm_readv");
+        perror("process_vm_write");
         return 0;
     }
 

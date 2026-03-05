@@ -23,6 +23,7 @@ typedef enum{
     DATA_LIBC,
     LOADER_CODE,
     LIBC_CODE,
+    VDSO,
     UNKNOWN,
 }region_type;
 
@@ -41,5 +42,7 @@ typedef struct{
 
 void parse_lines_of_maps(char** lines,regions_array* arr_regions);
 void print_mem_regions(regions_array* arr_regions);
+void print_region(memory_region* region);
 char* read_maps(pid_t pid);
+long find_base();
 int parse_maps(pid_t pid,regions_array* arr_regions);

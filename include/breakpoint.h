@@ -29,6 +29,8 @@ typedef struct{
 
 typedef struct{
     breakpoint* arr_breakpoints;
+    breakpoint* syscall_arr_breakpoints;
+    int number_of_syscall_breakpoints;
     int number_of_breakpoints;
 }breakpoints_array;
 

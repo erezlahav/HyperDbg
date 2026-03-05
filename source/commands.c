@@ -41,14 +41,23 @@ int run_process(int argc,char** argv){
         int status;
         waitpid(process_to_debug.pid,&status,0);
         if(WIFSTOPPED(status)){
+            break_symbol("_start",TEMP | SOFTWARE | INTERNAL);
+
             process_to_debug.proc_state = STOPPED;
+            long base_adress = find_base();
+            update_adressing_of_symtab_symbols(process_to_debug.array_of_symbols, base_adress);
+            resolve_breakpoints();
+            process_to_debug.proc_state = RUNNING;
+            ptrace(PTRACE_CONT, process_to_debug.pid, NULL, NULL);
+            waitpid(process_to_debug.pid,&status,0);
+            if(WIFSTOPPED(status)){
+                process_to_debug.proc_state = STOPPED;
+                parse_maps(process_to_debug.pid, &process_to_debug.array_of_regions);
+                put_syscalls_bps();
+                continue_proc(0,NULL);
+                process_to_debug.proc_state = RUNNING;
+            }
         }
-        parse_maps(process_to_debug.pid,&process_to_debug.array_of_regions);
-        update_adressing_of_symtab_symbols(process_to_debug.array_of_symbols, process_to_debug.array_of_regions.arr[0].start);
-        resolve_breakpoints();
-        put_syscalls_bps();
-        ptrace(PTRACE_CONT, process_to_debug.pid, NULL, NULL);
-        process_to_debug.proc_state = RUNNING;
     }
     
 }

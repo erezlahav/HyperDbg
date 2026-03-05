@@ -53,20 +53,30 @@ int create_resolved_breakpoint(symbol* bp_symbol,long offset_from_symbol,long ab
     if(process_to_debug.proc_state == NOT_LOADED){
         return 0;
     }
-    process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].index = process_to_debug.array_of_breakpoints.number_of_breakpoints;
-    process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].type = type;
-    process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].index = process_to_debug.array_of_breakpoints.number_of_breakpoints;
-    process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].abs_adress = abs_adress;
-    process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].offset_from_symbol = offset_from_symbol;
-    process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].bp_symbol = bp_symbol;
-    if(bp_symbol != NULL){
-        long symbol_adress = bp_symbol->adress;
-        process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].abs_adress = symbol_adress + offset_from_symbol;
+    if((type & SYSCALL) != 0){ //syscall breakpoint
+        int current_index = process_to_debug.array_of_breakpoints.number_of_syscall_breakpoints;
+        process_to_debug.array_of_breakpoints.syscall_arr_breakpoints[current_index].index = current_index;
+        process_to_debug.array_of_breakpoints.syscall_arr_breakpoints[current_index].type = type;
+        process_to_debug.array_of_breakpoints.syscall_arr_breakpoints[current_index].abs_adress = abs_adress;
+        process_to_debug.array_of_breakpoints.syscall_arr_breakpoints[current_index].bp_symbol = bp_symbol;
+        process_to_debug.array_of_breakpoints.syscall_arr_breakpoints[current_index].state = RESOLVED;
+        ptrace_breakpoint(&process_to_debug.array_of_breakpoints.syscall_arr_breakpoints[current_index]);
+        process_to_debug.array_of_breakpoints.number_of_syscall_breakpoints++;
     }
-    process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].state = RESOLVED;
-    
-    ptrace_breakpoint(&process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints]);
-    process_to_debug.array_of_breakpoints.number_of_breakpoints++;
+    else{ //normal breakpoint
+        process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].index = process_to_debug.array_of_breakpoints.number_of_breakpoints;
+        process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].type = type;
+        process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].abs_adress = abs_adress;
+        process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].offset_from_symbol = offset_from_symbol;
+        process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].bp_symbol = bp_symbol;   
+        if(bp_symbol != NULL){
+            long symbol_adress = bp_symbol->adress;
+            process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].abs_adress = symbol_adress + offset_from_symbol;
+        }
+        process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].state = RESOLVED;
+        ptrace_breakpoint(&process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints]);
+        process_to_debug.array_of_breakpoints.number_of_breakpoints++;
+    }
 }
 
 
@@ -76,6 +86,13 @@ breakpoint* get_breakpoint_by_addr(long adress){
     for(int i = 0; i < arr_of_breakpoints.number_of_breakpoints;i++){
         if(arr_of_breakpoints.arr_breakpoints[i].abs_adress == adress){
             return &arr_of_breakpoints.arr_breakpoints[i];
+        }
+    }
+
+
+    for(int i = 0; i < arr_of_breakpoints.number_of_syscall_breakpoints;i++){
+        if(arr_of_breakpoints.syscall_arr_breakpoints[i].abs_adress == adress){
+            return &arr_of_breakpoints.syscall_arr_breakpoints[i];
         }
     }
     return NULL; //if breakpoint not exists
@@ -102,6 +119,7 @@ int resolve_breakpoints(){
             process_to_debug.array_of_breakpoints.arr_breakpoints[i].state = RESOLVED;
             ptrace_breakpoint(&process_to_debug.array_of_breakpoints.arr_breakpoints[i]);
         }
+        
         
     }
 }
@@ -133,7 +151,7 @@ void print_breakpoints(){
     }
     for(int i = 0; i < process_to_debug.array_of_breakpoints.number_of_breakpoints;i++){
         breakpoint current_breakpoint = process_to_debug.array_of_breakpoints.arr_breakpoints[i];
-        if((current_breakpoint.type & INTERNAL) == 0){
+        if(1){
             print_breakpoint(&current_breakpoint);
         }
     }

@@ -106,7 +106,11 @@ int handle_stopped_process(pid_t pid, int status){
         }
     }
     else if(signal == SIGSEGV){
-        sigsegv_handler(signal,si);
+        int handled = sigsegv_handler(signal,si);
+        if(handled){
+            continue_proc(0,NULL);
+            return 0;
+        }
     }
 }
 
@@ -118,14 +122,14 @@ int sigsegv_handler(int signal,siginfo_t si){
     if(curr_page == NULL){
         printf("\nProgram received signal SIGSEGV, Segmentation fault.\n");
         printf("adress of segfault : 0x%016lx\n",segfault_addr);
-        return 1;
+        return 0;
     }
     else{
         curr_page->dirty_bit = 1;
         curr_page->data = malloc(PAGE_SIZE);
         remote_copy(curr_page->data,curr_page->start,curr_page->size);
         inject_mprotect(curr_page->start,curr_page->size,PROT_READ | PROT_WRITE);
-        continue_proc(0,NULL);
+        return 1;
     }
     
 

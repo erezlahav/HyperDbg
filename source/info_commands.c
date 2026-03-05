@@ -6,7 +6,9 @@
 #include "elf_parser.h"
 #include "debug.h"
 #include "breakpoint.h"
+
 extern debugee_process process_to_debug;
+
 info_commands functions_info[] = {
     {"registers",info_registers,"info all the current thread registers"},
     {"functions",info_functions,"info all functions"},
