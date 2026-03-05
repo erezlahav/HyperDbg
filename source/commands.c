@@ -294,6 +294,8 @@ int rewind_snapshot(int argc,char** argv){
     struct user_regs_struct former_regs = snapshot->regs;
     ptrace(PTRACE_SETREGS,process_to_debug.pid,0,&former_regs);
     arr_pages* pages_arr = snapshot->pages_array;
+    regions_array* arr_regions = snapshot->arr_of_regions;
+    restore_permissions(arr_regions);
     restore_pages(pages_arr);
     delete_record();
 }

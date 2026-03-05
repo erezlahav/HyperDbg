@@ -7,5 +7,5 @@ build/
 *.out
 
 .gdbhistory
-
+test.c
 debugee_proc.c

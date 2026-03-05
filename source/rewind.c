@@ -131,6 +131,7 @@ int remote_write(void* local_addr,void* remote_addr,size_t size){
     ssize_t n = process_vm_writev(process_to_debug.pid, &local_iov, 1, &remote_iov, 1, 0);
     if (n == -1) {
         perror("process_vm_write");
+        printf("adress : 0x%lx\n",(long)remote_addr);
         return 0;
     }
 
@@ -145,10 +146,25 @@ int remote_write(void* local_addr,void* remote_addr,size_t size){
 
 int restore_pages(arr_pages* pages_arr){
     for(int i = 0;i < pages_arr->cnt_pages;i++){
-        if(pages_arr->pages[i].dirty_bit == 1){
+        if(pages_arr->pages[i].dirty_bit == 1){ 
+            
             remote_write(pages_arr->pages[i].data,pages_arr->pages[i].start,pages_arr->pages[i].size);
         }
     }
+}
+
+
+int restore_permissions(regions_array* arr_regions){
+
+    for(int i = 0; i < arr_regions->regions_count;i++){
+        if(((arr_regions->arr[i].permissions) & WRITE) != 0){
+            int permissions = PROT_WRITE;
+            if(((arr_regions->arr[i].permissions) & READ) != 0) permissions |= PROT_READ;
+            if(((arr_regions->arr[i].permissions) & EXECUTE) != 0) permissions |= PROT_EXEC;
+            inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
+        }
+    }
+
 }
 
 int delete_record(){
@@ -159,15 +175,6 @@ int delete_record(){
     }
 
     regions_array* arr_regions = snapshot->arr_of_regions;
-
-    for(int i = 0; i < arr_regions->regions_count;i++){
-        if(((arr_regions->arr[i].permissions) & WRITE) != 0){
-            int permissions = PROT_WRITE;
-            if(((arr_regions->arr[i].permissions) & READ) != 0) permissions |= PROT_READ;
-            if(((arr_regions->arr[i].permissions) & EXECUTE) != 0) permissions |= PROT_EXEC;
-            inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
-        }
-    }
 
     free(snapshot->pages_array->pages);
     free(snapshot->pages_array);

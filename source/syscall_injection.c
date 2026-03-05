@@ -60,7 +60,6 @@ long remote_syscall( //still in maitnence
 
     int status;
     waitpid(tid, &status, 0);
-    handle_stopped_process(tid,status);
 
     struct user_regs_struct return_registers;
     ptrace(PTRACE_GETREGS,tid,NULL,&return_registers);
