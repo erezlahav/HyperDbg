@@ -40,6 +40,7 @@ const command_table table_commands[] = {
     {"set",set,"set value of register"},
     {"record",record,"record and save snapshot for later rewind"},
     {"rewind",rewind_snapshot,"rewind to the last snapshot saved by record"},
+    {"hook",hook,"hook to system call"},
     {NULL,NULL,NULL}
 };
 
@@ -119,7 +120,7 @@ int handle_stopped_process(pid_t pid, int status){
 
 
 int sigsegv_handler(int signal,siginfo_t si){
-    long segfault_addr = si.si_addr;
+    long segfault_addr = (long)si.si_addr;
     page* curr_page = get_page_from_addr(segfault_addr);
     if(curr_page == NULL){
         printf("\nProgram received signal SIGSEGV, Segmentation fault.\n");
@@ -129,7 +130,7 @@ int sigsegv_handler(int signal,siginfo_t si){
     else{
         curr_page->dirty_bit = 1;
         curr_page->data = malloc(PAGE_SIZE);
-        remote_copy(curr_page->data,curr_page->start,curr_page->size);
+        remote_copy(curr_page->data,(void*)curr_page->start,curr_page->size);
         inject_mprotect(curr_page->start,curr_page->size,PROT_READ | PROT_WRITE);
         return 1;
     }

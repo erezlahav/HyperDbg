@@ -18,9 +18,13 @@
 #include "disassembly.h"
 #include "utils.h"
 #include "rewind.h"
-
+#include "syscall_handling.h"
 
 extern debugee_process process_to_debug;
+
+
+
+
 int run_process(int argc,char** argv){
     if(process_to_debug.proc_state != NOT_LOADED){
         printf("process is already loaded\n");
@@ -32,6 +36,7 @@ int run_process(int argc,char** argv){
         int res = execlp(process_to_debug.elf_path,process_to_debug.elf_path,NULL);
         if(res == -1){
             printf("execlp failed\n");
+            return 0;
         }
 
 
@@ -58,6 +63,7 @@ int run_process(int argc,char** argv){
             }
         }
     }
+    return 1;
     
 }
 
@@ -87,6 +93,7 @@ int disassemble_function(int argc,char** argv){
     else{
         live_disassemble_symbol(input_symbol);
    }
+   return 1;
 
 }
 
@@ -98,7 +105,31 @@ int step_into(int argc,char** argv){
     step_over_bp(process_to_debug.pid);
     process_to_debug.proc_state = RUNNING;
     ptrace(PTRACE_SINGLESTEP,process_to_debug.pid,NULL,0);
+    return 1;
 }
+
+
+int hook(int argc,char** argv){
+    if(process_to_debug.proc_state == NOT_LOADED){
+        printf("process is not loaded yet\n");
+        return 0;
+    }
+
+    if(argv[1] == NULL){
+        printf("hook needs to have syscall name argument\n");
+        return 0;
+    }
+
+    for(int i = 0; syscalls[i].name != NULL && syscalls[i].number != -1; i++){
+        if(strcmp(argv[1],syscalls[i].name) == 0){
+            hooked_syscalls[syscalls[i].number] = 1;
+            return 1;
+        } 
+    }
+    return 0;
+}
+
+
 
 
 int next_instruction(int argc,char** argv){
@@ -129,28 +160,29 @@ int next_instruction(int argc,char** argv){
         create_breakpoint(NULL,0,regs.rip + call_instruction_len,type_of_bp);
         continue_proc(0,NULL);
     }
+    return 1;
 }
 
 
 int cmd_delete(int argc,char** argv){
-    if(argc == 2){
-        int bp_index = atoi(argv[1]);
-        if(bp_index == 0){
-            if(strlen(argv[1]) == 1 && argv[1][0] == '0'){ //that means user did delete 0
-                if(!delete_breakpoint(bp_index)){
-                    printf("no breakpoint number 0\n");
-                }
-            }
-            else if(strcmp(argv[1],"record") == 0){
-                delete_record();
-            }            
-        }
-        else{
+    if(argc != 2) return 0;
+    int bp_index = atoi(argv[1]);
+    if(bp_index == 0){
+        if(strlen(argv[1]) == 1 && argv[1][0] == '0'){ //that means user did delete 0
             if(!delete_breakpoint(bp_index)){
-                printf("no breakpoint number %d\n",bp_index);
+                printf("no breakpoint number 0\n");
             }
+        }
+        else if(strcmp(argv[1],"record") == 0){
+            delete_record();
+        }            
+    }
+    else{
+        if(!delete_breakpoint(bp_index)){
+            printf("no breakpoint number %d\n",bp_index);
         }
     }
+    return 1;
 }
 
 
@@ -177,6 +209,7 @@ int print_backtrace(int argc,char** argv){
         current_function_index++;
         printf("#%d   %s\n",current_function_index,current_symbol->name);
     }
+    return 1;
 }
 
 
@@ -241,9 +274,8 @@ int set(int argc,char** argv){
         }
         *reg_ptr = set_val;
         set_registers(process_to_debug.pid, &regs);
-
-
     }
+    return 1;
 }
 
 
@@ -276,6 +308,7 @@ int record(int argc,char** argv){
             }
         }
     }
+    return 1;
 }
 
 
@@ -297,6 +330,7 @@ int rewind_snapshot(int argc,char** argv){
     restore_permissions(arr_regions);
     restore_pages(pages_arr);
     delete_record();
+    return 1;
 }
 
 

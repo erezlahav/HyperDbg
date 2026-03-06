@@ -12,9 +12,13 @@
 #include "breakpoint.h"
 #include "commands.h"
 
-#define SYSCALL_OPCODE 0x050f
+
+
+
 extern debugee_process process_to_debug;
 
+#define SYSCALL_OPCODE 0x050f
+#define MAX_SYSCALLS 1000
 
 //system call in 64 bit linux systems
 //rax - syscall number
@@ -24,6 +28,26 @@ extern debugee_process process_to_debug;
 //r10 - fourth argument
 //r8 - fifth argument
 //r9 - sixth argument
+
+
+char hooked_syscalls[1000] = {0};
+
+syscall_entry syscalls[] = {
+    {"read",__NR_read,NULL},
+    {"write",__NR_write,NULL},
+    {"open",__NR_open,NULL},
+    {"close",__NR_close,NULL},
+    {"mmap",__NR_mmap,NULL},
+    {"socket",__NR_socket,NULL},
+    {"connect",__NR_connect,NULL},
+    {"accept",__NR_accept,NULL},
+    {NULL,-1,NULL}
+};
+
+
+
+
+
 
 
 int syscall_handle(struct user_regs_struct* regs){
@@ -45,7 +69,7 @@ int syscall_handle(struct user_regs_struct* regs){
         //printf("write accured\n");
     }
     if(syscall_number == __NR_exit || syscall_number == __NR_exit_group){
-        printf("process exit code : %lld\n", first_arg);
+        printf("process exit code : %ld\n", first_arg);
         printf("process exited\n");
         process_to_debug.proc_state = EXITED;
         return 0;

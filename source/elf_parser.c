@@ -72,7 +72,7 @@ Elf64_Phdr* get_program_headers(Elf64_Ehdr* elf_header,FILE* elf_file_ptr){
 
 Elf64_Phdr* get_text_segment_ph(Elf64_Phdr* program_headers_array,int num_of_program_headers){
     for(int i = 0; i < num_of_program_headers;i++){
-        if(program_headers_array[i].p_type == PT_LOAD && (program_headers_array[i].p_flags & PF_X == 1)){
+        if(program_headers_array[i].p_type == PT_LOAD && ((program_headers_array[i].p_flags & PF_X) == 1)){
             return &program_headers_array[i];
         }
     }

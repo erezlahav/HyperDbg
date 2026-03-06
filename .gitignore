@@ -9,3 +9,4 @@ build/
 .gdbhistory
 test.c
 debugee_proc.c
+debugger
