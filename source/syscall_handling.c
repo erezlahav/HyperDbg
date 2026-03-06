@@ -26,21 +26,7 @@ extern debugee_process process_to_debug;
 //r9 - sixth argument
 
 
-
-int check_for_syscall(long current_rip){
-    long syscall_rip = current_rip-2;
-    long res = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,syscall_rip,0);
-    long two_LSB = res & 0xffff;
-    return two_LSB == SYSCALL_OPCODE;
-}
-
-
-
-
-
-
 int syscall_handle(struct user_regs_struct* regs){
-    
     long syscall_number = regs->rax;
     long first_arg = regs->rdi;
     long second_arg = regs->rsi;
@@ -49,7 +35,30 @@ int syscall_handle(struct user_regs_struct* regs){
     long fifth_arg = regs->r8;
     long sixth_arg = regs->r9;
 
-    //step_over_bp(process_to_debug.pid);
+
+
+    if(syscall_number == __NR_read){
+        //printf("read accured, params : \n");
+        //printf("fd : %d, buffer adress : 0x%lx, count : %d\n",first_arg,second_arg,third_arg);
+    }
+    if(syscall_number == __NR_write){
+        //printf("write accured\n");
+    }
+    if(syscall_number == __NR_exit || syscall_number == __NR_exit_group){
+        printf("process exit code : %lld\n", first_arg);
+        printf("process exited\n");
+        process_to_debug.proc_state = EXITED;
+        return 0;
+    }   
+    
+
+
+
+
+
+
+    step_over_bp(process_to_debug.pid);
+    process_to_debug.proc_state = STOPPED;
     struct user_regs_struct return_regs;
     get_registers(process_to_debug.pid , &return_regs);
 
@@ -57,18 +66,8 @@ int syscall_handle(struct user_regs_struct* regs){
 
     long return_val = return_regs.rax;
 
-
-    /*
-    if(syscall_number == __NR_read){
-        printf("read accured\n");
-    }
-    if(syscall_number == __NR_write){
-        printf("write accured\n");
-    }
-    */
-
-
     continue_proc(0,NULL);
+
     return 1;
     
 }

@@ -55,7 +55,6 @@ int run_process(int argc,char** argv){
                 parse_maps(process_to_debug.pid, &process_to_debug.array_of_regions);
                 put_syscalls_bps();
                 continue_proc(0,NULL);
-                process_to_debug.proc_state = RUNNING;
             }
         }
     }
@@ -69,8 +68,8 @@ int continue_proc(int argc,char** argv){
     }
     if(process_to_debug.pid != -1){
         step_over_bp(process_to_debug.pid);
-        ptrace(PTRACE_CONT,process_to_debug.pid,NULL,0);
         process_to_debug.proc_state = RUNNING;
+        ptrace(PTRACE_CONT,process_to_debug.pid,NULL,0);
         return 1;
     }
     return 0;

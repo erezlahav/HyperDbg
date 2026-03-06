@@ -17,7 +17,7 @@
 #include "syscall_injection.h"
 #include "rewind.h"
 #include "syscall_handling.h"
-
+#include "colors.h"
 
 
 extern debugee_process process_to_debug;
@@ -65,7 +65,7 @@ int set_registers(pid_t pid, struct user_regs_struct* regs){
 int handle_command(char* command){
     int* argc = malloc(sizeof(int));
     char** commands = parse_command(command,argc);
-    if(commands == NULL){
+    if(commands == NULL || commands[0] == NULL){
         return 0;
     }
     if(commands[0][0] == 'x'){  //syntax like x/10i $rip
@@ -92,13 +92,15 @@ int handle_stopped_process(pid_t pid, int status){
     get_registers(pid, &regs);
     long bp_rip = regs.rip-1;
 
+    int cont = 0;
+
     if(signal == SIGTRAP){
         breakpoint* bp = get_breakpoint_by_addr(bp_rip); //null if no breakpoint match
         if(bp != NULL){
             if(((bp->type & SYSCALL)) != 0){
                 syscall_handle(&regs);
             }
-            if((bp->type & INTERNAL) == 0){ //not an internal bp
+            else if((bp->type & INTERNAL) == 0){ //not an internal bp
                 printf("process stopped in adress : 0x%016lx",bp_rip);
                 printf(", hit bp number : %d",bp->index);
                 printf("\n");
@@ -107,11 +109,9 @@ int handle_stopped_process(pid_t pid, int status){
     }
     else if(signal == SIGSEGV){
         int handled = sigsegv_handler(signal,si);
-        if(handled){
-            continue_proc(0,NULL);
-            return 0;
-        }
+        if(handled) continue_proc(0,NULL);
     }
+    return cont;
 }
 
 
@@ -142,20 +142,25 @@ int debug_process(char* elf_path){
     int status;
     while(1){
         if(process_to_debug.proc_state == NOT_LOADED || process_to_debug.proc_state == STOPPED){
-            printf(">");
+            printf(BLUE "hyperdbg> " RESET);
             fgets(input_command,INPUT_SIZE,stdin);
             int res = handle_command(input_command);
             if(!res) printf("command is not avalieble\n");
         }
         else if(process_to_debug.proc_state == RUNNING){
             waitpid(process_to_debug.pid,&status,0);
-            if(WIFSTOPPED(status)){
-                handle_stopped_process(process_to_debug.pid, status);
-            }
-            else if(WIFEXITED(status)){
-                printf("child exited!\n");
+            if(WIFEXITED(status)){
+                process_to_debug.proc_state == EXITED;
+                printf("process exited\n");
                 break;
             }
+            if(WIFSTOPPED(status)){
+                int sig = WSTOPSIG(status);
+                handle_stopped_process(process_to_debug.pid, status);
+            }
+        }
+        else if(process_to_debug.proc_state == EXITED){
+            break;
         }
     }
 }

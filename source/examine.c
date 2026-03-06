@@ -175,7 +175,7 @@ int exemine(int argc,char** argv){ // x/[COUNT][SIZE][FORMAT] ADDRESS/REGISTER
 
         data_read* data_read_ptr = get_data_array(COUNT,SIZE,adress); //get data from adress
         if(data_read_ptr->bytes_read == 0){
-            printf("could not read bytes from adress : %lx",adress);
+            printf("could not read bytes from adress : 0x%016lx",adress);
             return 0;
         }
         format_string = get_format_string(FORMAT,SIZE);
@@ -253,7 +253,7 @@ int exemine(int argc,char** argv){ // x/[COUNT][SIZE][FORMAT] ADDRESS/REGISTER
 
 
         if(data_read_ptr->bytes_read == 0){
-            printf("Cannot access memory at address : %lx\n",adress);
+            printf("Cannot access memory at address : 0x%016lx\n",adress);
             return 0;
         }
         if(FORMAT == INSTRUCTION){
