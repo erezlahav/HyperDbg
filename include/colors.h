@@ -13,6 +13,8 @@
 #define MAGENTA     "\033[0;35m"
 #define CYAN        "\033[0;36m"
 #define WHITE       "\033[0;37m"
+#define NEON_GREEN  "\x1b[1;38;5;46m"
+#define DARK_PURPLE "\x1b[1;38;5;129m"
 
 // bold
 #define BOLD_BLACK   "\033[1;30m"

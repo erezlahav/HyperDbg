@@ -101,8 +101,10 @@ int handle_stopped_process(pid_t pid, int status){
                 syscall_handle(&regs);
             }
             else if((bp->type & INTERNAL) == 0){ //not an internal bp
-                printf("process stopped in adress : 0x%016lx",bp_rip);
-                printf(", hit bp number : %d",bp->index);
+                symbol* bp_symbol = get_symbol_by_adress(bp_rip);
+
+                printf("Breakpoint %d, " BLUE "0x%016lx " RESET ,bp->index, bp_rip);
+                if(bp_symbol) printf("in " YELLOW "%s ()" RESET,bp_symbol->name);
                 printf("\n");
             }
         }
@@ -142,7 +144,7 @@ int debug_process(char* elf_path){
     int status;
     while(1){
         if(process_to_debug.proc_state == NOT_LOADED || process_to_debug.proc_state == STOPPED){
-            printf(BLUE "hyperdbg> " RESET);
+            printf(DARK_PURPLE "hyperdbg> " RESET);
             fgets(input_command,INPUT_SIZE,stdin);
             int res = handle_command(input_command);
             if(!res) printf("command is not avalieble\n");

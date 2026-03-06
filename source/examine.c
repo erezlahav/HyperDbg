@@ -10,6 +10,7 @@
 #include "debug.h"
 #include "disassembly.h"
 #include "breakpoint.h"
+#include "colors.h"
 
 extern debugee_process process_to_debug;
 
@@ -92,7 +93,7 @@ void print_data_array(long adress, data_read* data_read_ptr,int size,const char*
     int data_index = 0;
     __uint64_t mask = get_mask_by_size(size);
     while(data_index < data_read_ptr->bytes_read){
-        printf("0x%016lx: ",adress + data_index);
+        printf(BLUE "0x%016lx: " RESET,adress + data_index);
         printf(format_string,*((long*)(data_read_ptr->data+data_index)) & mask); 
         printf("\n");
         data_index += size;
@@ -175,7 +176,7 @@ int exemine(int argc,char** argv){ // x/[COUNT][SIZE][FORMAT] ADDRESS/REGISTER
 
         data_read* data_read_ptr = get_data_array(COUNT,SIZE,adress); //get data from adress
         if(data_read_ptr->bytes_read == 0){
-            printf("could not read bytes from adress : 0x%016lx",adress);
+            printf("could not read bytes from adress : " BLUE "0x%016lx" RESET,adress);
             return 0;
         }
         format_string = get_format_string(FORMAT,SIZE);
@@ -253,7 +254,7 @@ int exemine(int argc,char** argv){ // x/[COUNT][SIZE][FORMAT] ADDRESS/REGISTER
 
 
         if(data_read_ptr->bytes_read == 0){
-            printf("Cannot access memory at address : 0x%016lx\n",adress);
+            printf("Cannot access memory at address : " BLUE "0x%016lx\n",adress);
             return 0;
         }
         if(FORMAT == INSTRUCTION){

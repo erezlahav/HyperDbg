@@ -9,6 +9,7 @@
 #include "breakpoint.h"
 #include "utils.h"
 #include "examine.h"
+#include "colors.h"
 extern debugee_process process_to_debug;
 
 int live_disassemble_symbol(symbol* symbol){
@@ -50,7 +51,7 @@ void print_disassemble_bytes(unsigned char* bytes_array,size_t size,long start_a
 
     if (count > 0) {
         for (size_t i = 0; i < count && i < user_count; i++) {
-            printf("0x%lx\t%s\t%s\n",insn[i].address,insn[i].mnemonic,insn[i].op_str);
+            printf(BLUE "0x%016lx" GREEN "\t%s" RESET "\t%s\n",insn[i].address,insn[i].mnemonic,insn[i].op_str);
         }
         cs_free(insn, count);
     }

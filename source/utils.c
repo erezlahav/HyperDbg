@@ -157,12 +157,13 @@ int free_double_str_ptr(char** env_paths){
 
 symbol* get_symbol_by_adress(unsigned long adress){ //for backtrace
     symbol* symbol_array_ptr = process_to_debug.array_of_symbols->symbols;
+
     uint16_t number_of_symbols =  process_to_debug.array_of_symbols->number_of_symbols;
 
     for(int i = 0; i < number_of_symbols; i++){
         long start_adress = symbol_array_ptr[i].adress;
         long end_adress = symbol_array_ptr[i].adress + symbol_array_ptr[i].size;
-        if(adress >= start_adress && adress <= end_adress){
+        if(adress >= start_adress && adress <= end_adress && adress != end_adress){
             return &symbol_array_ptr[i];
         }
     }
