@@ -110,11 +110,6 @@ int step_into(int argc,char** argv){
 
 
 int hook(int argc,char** argv){
-    if(process_to_debug.proc_state == NOT_LOADED){
-        printf("process is not loaded yet\n");
-        return 0;
-    }
-
     if(argv[1] == NULL){
         printf("hook needs to have syscall name argument\n");
         return 0;

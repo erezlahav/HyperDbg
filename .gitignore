@@ -1,3 +1,8 @@
+a.out
+debugee_proc.c
+test.c
+.gdb_history
+
 
 build/
 *.o
@@ -6,7 +11,3 @@ build/
 *.vscode
 *.out
 
-.gdbhistory
-test.c
-debugee_proc.c
-debugger

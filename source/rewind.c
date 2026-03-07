@@ -125,6 +125,26 @@ int remote_copy(void* local_addr,void* remote_addr,size_t size){
 }
 
 
+
+void remote_read_string(pid_t pid, long remote_addr, char* buf, int maxlen){
+    int i = 0;
+    long data;
+
+    while(i < maxlen) {
+        data = ptrace(PTRACE_PEEKDATA, pid, remote_addr + i, NULL);
+
+        memcpy(buf + i, &data, sizeof(long));
+
+        if(memchr(&data, 0, sizeof(long)) != NULL)
+            break;
+
+        i += sizeof(long);
+    }
+
+    buf[maxlen-1] = 0;
+}
+
+
 int remote_write(void* local_addr,void* remote_addr,size_t size){
     struct iovec local_iov = { local_addr, size };
     struct iovec remote_iov = { remote_addr, size };

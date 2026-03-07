@@ -8,7 +8,7 @@
 
 
 typedef struct user_regs_struct regs_t;
-typedef void (*syscall_handler_t)(regs_t* regs);
+typedef int (*syscall_handler_t)(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
 
 
 
@@ -19,13 +19,25 @@ typedef struct {
 } syscall_entry;
 
 
+typedef struct {
+    const char* name;
+    long* reg;
+} syscall_param;
+
+
 
 extern char hooked_syscalls[1000];
 extern syscall_entry syscalls[];
 
 
 
-
+syscall_entry* get_syscall_entry_by_number(int syscall_number);
 int syscall_handle(struct user_regs_struct* regs);
 int put_syscalls_bps();
 int patch_syscalls_to_bps(long start,long end);
+int default_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
+int write_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
+int read_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
+int open_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
+int openat_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
+char* read_remote_str(long remote_addr);
