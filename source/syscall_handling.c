@@ -65,6 +65,9 @@ int syscall_handle(struct user_regs_struct* regs){
     long fifth_arg = regs->r8;
     long sixth_arg = regs->r9;
 
+    
+
+
     int hooked = 0;
     int antidebug = 0;
 
@@ -102,7 +105,7 @@ int syscall_handle(struct user_regs_struct* regs){
 
 
 
-    if(syscall_number == __NR_write){
+    if(syscall_number == __NR_write && first_arg == 1){ 
         printf(GREEN "\n(PROC) " RESET);
         fflush(stdout);
     }
@@ -110,7 +113,7 @@ int syscall_handle(struct user_regs_struct* regs){
 
     fflush(stdout);
 
-    
+
     process_to_debug.proc_state = STOPPED;
     struct user_regs_struct return_regs;
     get_registers(process_to_debug.pid , &return_regs);

@@ -94,20 +94,33 @@ int handle_stopped_process(pid_t pid, int status){
     long bp_rip = regs.rip-1;
 
     int cont = 0;
-
     if(signal == SIGTRAP){
         breakpoint* bp = get_breakpoint_by_addr(bp_rip); //null if no breakpoint match
         if(bp != NULL){
+            symbol* bp_symbol = get_symbol_by_adress(bp_rip);
             if(((bp->type & SYSCALL)) != 0){
                 syscall_handle(&regs);
             }
             else if((bp->type & INTERNAL) == 0){ //not an internal bp
-                symbol* bp_symbol = get_symbol_by_adress(bp_rip);
 
                 printf("Breakpoint %d, " BLUE "0x%016lx " RESET ,bp->index, bp_rip);
                 if(bp_symbol) printf("in " YELLOW "%s ()" RESET,bp_symbol->name);
+                else  printf(YELLOW "in ?? ()" RESET);
                 printf("\n");
             }
+            else if ((bp->type & NI) ) {  // TF = bit 8
+                printf(BLUE "0x%016lx " RESET,bp_rip);
+                if(bp_symbol) printf("in " YELLOW "%s ()" RESET,bp_symbol->name);
+                else  printf(YELLOW "in ?? ()" RESET);
+                printf("\n");
+            }
+        }
+        else{ //TF from si/ni
+            symbol* bp_symbol = get_symbol_by_adress(bp_rip);
+            printf(BLUE "0x%016lx " RESET,bp_rip);
+            if(bp_symbol) printf("in " YELLOW "%s ()" RESET,bp_symbol->name);
+            else  printf(YELLOW "in ?? ()" RESET);
+            printf("\n");
         }
     }
     else if(signal == SIGSEGV){

@@ -151,7 +151,7 @@ int next_instruction(int argc,char** argv){
     }
     else{ //call instruction in next opcode so put software bp in after call instruction
         int call_instruction_len = get_length_of_instruction(next_opcodes,sizeof(next_opcodes),regs.rip);
-        unsigned char type_of_bp = SOFTWARE | TEMP | INTERNAL;
+        unsigned char type_of_bp = SOFTWARE | TEMP | INTERNAL | NI;
         create_breakpoint(NULL,0,regs.rip + call_instruction_len,type_of_bp);
         continue_proc(0,NULL);
     }
