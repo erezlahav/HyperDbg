@@ -41,6 +41,7 @@ const command_table table_commands[] = {
     {"record",record,"record and save snapshot for later rewind"},
     {"rewind",rewind_snapshot,"rewind to the last snapshot saved by record"},
     {"hook",hook,"hook to system call"},
+    {"unhook",unhook,"remove hook to system call"},
     {NULL,NULL,NULL}
 };
 

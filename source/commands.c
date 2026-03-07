@@ -125,6 +125,23 @@ int hook(int argc,char** argv){
 }
 
 
+int unhook(int argc,char** argv){
+    if(argv[1] == NULL){
+        printf("unhook needs to have syscall name argument\n");
+        return 0;
+    }
+
+    for(int i = 0; syscalls[i].name != NULL && syscalls[i].number != -1; i++){
+        if(strcmp(argv[1],syscalls[i].name) == 0){
+            hooked_syscalls[syscalls[i].number] = 0;
+            return 1;
+        } 
+    }
+    return 0;
+}
+
+
+
 
 
 int next_instruction(int argc,char** argv){
