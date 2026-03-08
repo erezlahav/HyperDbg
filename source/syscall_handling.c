@@ -3,6 +3,8 @@
 #include <string.h>
 #include <sys/syscall.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
+#include <sys/types.h>
 
 #include "debug.h"
 #include "syscall_handling.h"
@@ -57,39 +59,11 @@ syscall_entry* get_syscall_entry_by_number(int syscall_number){
 
 
 int syscall_handle(struct user_regs_struct* regs){
-    long syscall_number = regs->rax;
-    long first_arg = regs->rdi;
-    long second_arg = regs->rsi;
-    long third_arg = regs->rdx;
-    long fourth_arg = regs->r10;
-    long fifth_arg = regs->r8;
-    long sixth_arg = regs->r9;
-
-    
-
 
     int hooked = 0;
-    int antidebug = 0;
-
-    if(syscall_number == __NR_exit || syscall_number == __NR_exit_group){
-        printf("process exit code : %ld\n", first_arg);
-        printf("process exited\n");
-        process_to_debug.proc_state = EXITED;
-        return 0;
-    }   
-
-
-    if(syscall_number == __NR_ptrace){
-        if(first_arg == PTRACE_TRACEME){
-            printf("anti debug dectected!\n");
-            antidebug = 1;
-        }
-    }   
-
-
 
     //check if this syscall is supposed to be hooked
-    syscall_entry* entry = get_syscall_entry_by_number(syscall_number);
+    syscall_entry* entry = get_syscall_entry_by_number(regs->rax);
     
     if(entry != NULL && hooked_syscalls[entry->number]){
         hooked = 1;
@@ -102,6 +76,14 @@ int syscall_handle(struct user_regs_struct* regs){
     }
 
 
+    struct user_regs_struct* final_syscall_regs = regs;
+    long syscall_number = final_syscall_regs->rax;
+    long first_arg = final_syscall_regs->rdi;
+    long second_arg = final_syscall_regs->rsi;
+    long third_arg = final_syscall_regs->rdx;
+    long fourth_arg = final_syscall_regs->r10;
+    long fifth_arg = final_syscall_regs->r8;
+    long sixth_arg = final_syscall_regs->r9;
 
 
 
@@ -109,25 +91,58 @@ int syscall_handle(struct user_regs_struct* regs){
         printf(GREEN "\n(PROC) " RESET);
         fflush(stdout);
     }
-    step_over_bp(process_to_debug.pid);
-
+    step_over_bp(process_to_debug.pid);   
     fflush(stdout);
+    // after syscall
+
+
 
 
     process_to_debug.proc_state = STOPPED;
     struct user_regs_struct return_regs;
     get_registers(process_to_debug.pid , &return_regs);
+    long return_val = return_regs.rax;
 
-
-
-
-    if(antidebug){
-        return_regs.rax = 0;
-        printf("overriding return value to 0\n");
-        ptrace(PTRACE_SETREGS,process_to_debug.pid,NULL,&return_regs);
+    if(syscall_number == __NR_exit || syscall_number == __NR_exit_group){ //hook to exit
+        printf("process exit code : %ld\n", first_arg);
+        printf("process exited\n");
+        process_to_debug.proc_state = EXITED;
+        return 0;
+    } 
+ 
+    else if(syscall_number == __NR_ptrace){ //hook to ptrace
+        if(first_arg == PTRACE_TRACEME){
+            printf("anti debug dectected!\n");
+            return_regs.rax = 0;
+            printf("overriding return value to 0\n");
+            ptrace(PTRACE_SETREGS,process_to_debug.pid,NULL,&return_regs);
+        }
     }
 
-    long return_val = return_regs.rax;
+    else if(syscall_number == __NR_mmap && return_val != MAP_FAILED){ //hook to mmap
+        void* address = (void*)return_val;
+        if(process_to_debug.current_snapshot != NULL){ //during record
+            add_live_mmap(&process_to_debug.current_snapshot->current_mmaps_head, MMAP,address, second_arg,third_arg,fourth_arg,fifth_arg,sixth_arg);
+        }
+        else{ //not during record
+            add_live_mmap(&process_to_debug.live_mmaps, MMAP, address, second_arg,third_arg,fourth_arg,fifth_arg,sixth_arg);
+        }
+    }
+    
+    else if(syscall_number == __NR_munmap && return_val != -1){ //hook to munmap
+        long address = first_arg;
+        if(process_to_debug.current_snapshot != NULL){ //during record
+            
+            add_live_mmap(&process_to_debug.current_snapshot->current_mmaps_head, MUNMAP,address, second_arg,0,0,0,0);
+        }
+        else{ //not during record
+            live_mmap_node* live_mmap = get_live_mmap_by_addr(& process_to_debug.live_mmaps, address, MMAP);
+            if(live_mmap ){
+                int res = remove_live_mmap(&process_to_debug.live_mmaps, address,MMAP);
+            }
+        }
+    }  
+
     if(hooked){
         printf("%s returned : %ld\n",entry->name,return_val);
     }

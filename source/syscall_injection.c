@@ -10,6 +10,9 @@
 
 #define SYSCALL_OPCODE 0x050f
 #define MPROTECT_SYSCALL_NUMBER 10
+#define MUNMAP_SYSCALL_NUMBER 11
+#define MMAP_SYSCALL_NUMBER 9
+
 
 extern debugee_process process_to_debug;
 
@@ -20,7 +23,7 @@ extern debugee_process process_to_debug;
         get_registers(process_to_debug.pid, &regs);
         ptrace(PTRACE_POKEDATA, process_to_debug.pid, regs.rsp-0x100, 0x000a6161);
         remote_syscall(process_to_debug.pid,1,1,regs.rsp-0x100,4,0,0,0);
-*/
+*/ 
 
 long remote_syscall( //still in maitnence
     pid_t tid,
@@ -75,6 +78,14 @@ long remote_syscall( //still in maitnence
 
 int inject_mprotect(long adress,size_t size,int permissions){
     return remote_syscall(process_to_debug.pid,MPROTECT_SYSCALL_NUMBER,adress,size,permissions,0,0,0);
+}
+
+int inject_mmap(long adress,size_t size,int prot, int flags, int fd,size_t offset){
+    return remote_syscall(process_to_debug.pid, MMAP_SYSCALL_NUMBER, adress, size, prot, flags, fd, offset);
+}
+
+int inject_munmap(long adress,size_t size){
+    return remote_syscall(process_to_debug.pid,MUNMAP_SYSCALL_NUMBER,adress,size,0,0,0,0); //zeros doesnt matter 
 }
 
 

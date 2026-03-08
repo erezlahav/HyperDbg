@@ -32,6 +32,7 @@ typedef struct{
     breakpoints_array array_of_breakpoints;
     snapshot* current_snapshot;
     symbols_array* array_of_symbols;
+    live_mmap_node* live_mmaps; 
 }debugee_process;
 
 
@@ -42,3 +43,5 @@ int handle_command(char* command);
 int handle_stopped_process(pid_t pid, int status);
 int sigsegv_handler(int signal,siginfo_t si);
 int debug_process(char* elf_path);
+
+

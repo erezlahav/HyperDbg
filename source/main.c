@@ -34,7 +34,7 @@ int main(int argc,char* argv[],char* envp[]){
     process_to_debug.array_of_breakpoints.number_of_syscall_breakpoints = 0;
     process_to_debug.array_of_breakpoints.arr_breakpoints = malloc(sizeof(breakpoint)* MAX_AMOUNT_OF_BREAKPOINTS);
     process_to_debug.array_of_breakpoints.syscall_arr_breakpoints = malloc(sizeof(breakpoint)* MAX_AMOUNT_OF_SYSCALL_BREAKPOINTS);
-
+    process_to_debug.live_mmaps = NULL;
 
     if(strcmp(argv[1],"-run") == 0){
         printf("executing -run to process\n");

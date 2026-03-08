@@ -6,6 +6,9 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/uio.h>
+#include <sys/types.h>
+#include <errno.h>
+
 
 #include "rewind.h"
 #include "debug.h"
@@ -55,6 +58,7 @@ int save_snapshot(){
     parse_maps(process_to_debug.pid,process_to_debug.current_snapshot->arr_of_regions);
     arr_pages* pages = create_arr_pages(process_to_debug.current_snapshot->arr_of_regions);
     process_to_debug.current_snapshot->pages_array = pages;
+    process_to_debug.current_snapshot->current_mmaps_head = NULL;
 }
 
 
@@ -171,6 +175,7 @@ int restore_pages(arr_pages* pages_arr){
             remote_write(pages_arr->pages[i].data,pages_arr->pages[i].start,pages_arr->pages[i].size);
         }
     }
+    return 1;
 }
 
 
@@ -184,7 +189,7 @@ int restore_permissions(regions_array* arr_regions){
             inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
         }
     }
-
+    return 1;
 }
 
 int delete_record(){
@@ -202,4 +207,104 @@ int delete_record(){
     free(snapshot);
     process_to_debug.current_snapshot = NULL;
 }
+
+
+
+
+int add_live_mmap(live_mmap_node** head, mmap_type type, void* addr, size_t size, int prot, int flags,int fd, off_t offset){
+
+
+
+    live_mmap_node* node = malloc(sizeof(live_mmap_node));
+
+    node->start = addr;
+    node->size = size;
+    node->type = type;
+    node->prot = prot;
+    node->flags = flags;
+    node->fd = fd;
+    node->offset = offset;
+
+    node->next = *head;
+
+    *head = node;
+    return 1;
+}
+
+
+int remove_live_mmap(live_mmap_node** head, void* addr,mmap_type type){
+
+
+    live_mmap_node* curr = *head;
+    live_mmap_node* prev = NULL;
+
+    while(curr != NULL){
+
+        if(curr->start == addr && curr->type == type){
+
+            if(prev == NULL)
+                *head = curr->next;
+            else
+                prev->next = curr->next;
+
+            free(curr);
+            return 1;
+        }
+
+        prev = curr;
+        curr = curr->next;
+    }
+
+    return 0;
+}
+
+
+
+
+
+int rewind_all_live_mmaps(){
+    if(process_to_debug.current_snapshot == NULL) return 0;
+
+
+    live_mmap_node* curr = process_to_debug.current_snapshot->current_mmaps_head;
+
+    while(curr != NULL){ //from latest to earliest because mmap calls are lifo
+        live_mmap_node* next = curr->next;
+        if(curr->type == MMAP){ //if current is MMAP
+            inject_munmap(curr->start,curr->size);
+            remove_live_mmap(&process_to_debug.current_snapshot->current_mmaps_head, curr->start,curr->type);
+        }
+
+        else if(curr->type == MUNMAP){
+            live_mmap_node* match_mmap = get_live_mmap_by_addr(&process_to_debug.current_snapshot->current_mmaps_head, curr->start,MMAP);
+            if(match_mmap ){ //there is an mmap that match this munmap that happend during the record
+                inject_mmap(match_mmap->start, match_mmap->size, match_mmap->prot, match_mmap->flags, match_mmap->fd, match_mmap->offset);
+            }
+            else{
+                match_mmap = get_live_mmap_by_addr(&process_to_debug.live_mmaps, curr->start,MMAP);
+                if(match_mmap){
+                    inject_mmap(match_mmap->start, match_mmap->size, match_mmap->prot, match_mmap->flags, match_mmap->fd, match_mmap->offset);
+                }
+            }
+             
+        }
+        curr = next;
+    }
+
+    return 0;
+}
+
+
+
+live_mmap_node* get_live_mmap_by_addr(live_mmap_node** head, long addr,mmap_type type){
+    live_mmap_node* curr = *head;
+    while(curr != NULL){ //from latest to earliest because mmap calls are lifo
+        if(curr->start == (void*)addr && curr->type == type){
+            return curr;
+        }
+        curr = curr->next;
+    }
+    return NULL;
+}
+
 

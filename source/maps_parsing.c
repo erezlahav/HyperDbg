@@ -203,6 +203,7 @@ long find_base(){
 
 
 
+
 int parse_maps(pid_t pid,regions_array* arr_regions){
     char* content = read_maps(pid);
     char** lines = parser(content,"\n\t\r");

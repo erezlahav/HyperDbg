@@ -25,6 +25,7 @@ extern debugee_process process_to_debug;
 
 
 
+
 int run_process(int argc,char** argv){
     if(process_to_debug.proc_state != NOT_LOADED){
         printf("process is already loaded\n");
@@ -331,6 +332,7 @@ int rewind_snapshot(int argc,char** argv){
         return 0;
     }
     snapshot* snapshot = process_to_debug.current_snapshot;
+    
     if(snapshot == NULL){
         printf("no snapshots saved yet\n");
         return 0;
@@ -339,6 +341,7 @@ int rewind_snapshot(int argc,char** argv){
     ptrace(PTRACE_SETREGS,process_to_debug.pid,0,&former_regs);
     arr_pages* pages_arr = snapshot->pages_array;
     regions_array* arr_regions = snapshot->arr_of_regions;
+    rewind_all_live_mmaps(); 
     restore_permissions(arr_regions);
     restore_pages(pages_arr);
     delete_record();
