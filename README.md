@@ -14,7 +14,7 @@ My debugger is a GDB-like debugger written in C for Linux x86_64, supporting bre
 - **Attach:** Debug already running processes  
 - **ASLR Support:** Dynamically resolve memory addresses by parsing `/proc/<pid>/maps`  
 - **Disassembly:** Function-level disassembly or arbitrary memory ranges (e.g., `x/10i $rip`)  
-- **Reverse Debugging:** Rewind execution using Copy-On-Write snapshots
+- **Reverse Debugging:** Rewind execution using Copy-On-Write snapshots and Dynamic Post-Record Hooks.
 - **Syscalls Monitoring** monitor, hook and modify syscalls at runtime.
 
 ---
@@ -22,6 +22,7 @@ My debugger is a GDB-like debugger written in C for Linux x86_64, supporting bre
 # Reverse Debugging Explanation:
 1. First of all im extracting the writable regions of the program like stack,data,heap and more...
 2. Then i inject the syscall MPROTECT to the debugged process on the writable pages of the program and change them to READONLY
+3. Also I hook the mmap and munmap syscalls, The purpose of these hooks is to track dynamic memory changes that occur after a snapshot is taken.
 3. Then im saving the registers of the program of the current snapshot
 4. Now every time the process tries to change data of pages from stack,data,heap and more... he gets a page fault and the signal SIGSEGV is sent to him by the kernel
 5. Then i catch the SIGSEGV, identify the address of the SIGSEGV from from `siginfo_t` `si_addr`(internally CR2 register) and identify the correct page

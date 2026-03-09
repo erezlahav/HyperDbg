@@ -3,6 +3,7 @@
 #include <sys/ptrace.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <sys/wait.h>
 
 #include "syscall_injection.h"
 #include "info_commands.h"

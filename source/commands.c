@@ -341,8 +341,8 @@ int rewind_snapshot(int argc,char** argv){
     ptrace(PTRACE_SETREGS,process_to_debug.pid,0,&former_regs);
     arr_pages* pages_arr = snapshot->pages_array;
     regions_array* arr_regions = snapshot->arr_of_regions;
-    rewind_all_live_mmaps(); 
     restore_permissions(arr_regions);
+    rewind_all_live_mmaps(); 
     restore_pages(pages_arr);
     delete_record();
     return 1;

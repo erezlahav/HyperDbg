@@ -15,3 +15,5 @@ long remote_syscall(
 
 
 int inject_mprotect(long adress,size_t size,int permissions);
+int inject_mmap(long adress,size_t size,int prot, int flags, int fd,size_t offset);
+int inject_munmap(long adress,size_t size);

@@ -39,6 +39,7 @@ int ptrace_breakpoint(breakpoint* bp){
         long new_instruction_with_cc = (res & 0xffffffffffffff00) | 0xcc;
         ptrace(PTRACE_POKEDATA,process_to_debug.pid,bp->abs_adress,new_instruction_with_cc);
     }
+    return 1;
 }
 
 
@@ -51,6 +52,7 @@ int create_pending_breakpoint(symbol* bp_symbol,long offset_from_symbol,long abs
     process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].abs_adress = abs_adress;
     process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints].state = PENDING;
     process_to_debug.array_of_breakpoints.number_of_breakpoints++;
+    return 1;
 }
 
 int create_resolved_breakpoint(symbol* bp_symbol,long offset_from_symbol,long abs_adress,unsigned char type){
@@ -81,6 +83,7 @@ int create_resolved_breakpoint(symbol* bp_symbol,long offset_from_symbol,long ab
         ptrace_breakpoint(&process_to_debug.array_of_breakpoints.arr_breakpoints[process_to_debug.array_of_breakpoints.number_of_breakpoints]);
         process_to_debug.array_of_breakpoints.number_of_breakpoints++;
     }
+    return 1;
 }
 
 
@@ -109,6 +112,7 @@ int create_breakpoint(symbol* bp_symbol,long offset_from_symbol,long abs_adress,
     else{
         create_resolved_breakpoint(bp_symbol, offset_from_symbol, abs_adress,type);
     }
+    return 1;
 }
 
 int resolve_breakpoints(){
@@ -126,6 +130,7 @@ int resolve_breakpoints(){
         
         
     }
+    return 1;
 }
 
 void print_breakpoint(breakpoint* bp){
@@ -175,7 +180,7 @@ int cmd_software_breakpoint(int argc,char** argv){
     else{ //* in argv, means its raw adrress or relitive symbol
         handle_star_breakpoint(argv,SOFTWARE | PERM);
     }
-    
+    return 1;
 }
 
 
@@ -190,6 +195,7 @@ int break_symbol(char* symbol_name,unsigned char type){
         long adress_of_symbol = target_symbol->adress;
         create_breakpoint(target_symbol,0,adress_of_symbol, type); //0 in offset becuase this is a condition of only symbol no offset
     }
+    return 1;
 }
 
 
@@ -207,11 +213,13 @@ int handle_star_breakpoint(char** argv,unsigned char type){
     else{
         set_break_in_star_symbol(break_arg,type);
     }
+    return 1;
 }
 
 int set_break_raw_adress(char* addr_to_break,unsigned char type){
     long break_adress = string_addr_to_long(addr_to_break);
     create_breakpoint(NULL,0,break_adress,type); //NULL and 0 becuase this is a condition of only raw adress
+    return 1;
 }
 
 
@@ -248,6 +256,7 @@ int set_break_in_star_symbol(char* break_argument,unsigned char type){
     else{
         break_symbol(symbol_name,type); //only symbol
     }
+    return 1;
     
 }
 
@@ -307,10 +316,10 @@ int delete_breakpoint(int index){
 
 int step_over_bp(pid_t pid){
     struct user_regs_struct regs;
-    get_registers(process_to_debug.pid, &regs);
+    get_registers(pid, &regs);
     long bp_rip = regs.rip-1;
     breakpoint* bp = get_breakpoint_by_addr(regs.rip-1);
-    long current_opcodes = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,bp_rip,NULL); 
+    long current_opcodes = ptrace(PTRACE_PEEKDATA, pid,bp_rip,NULL); 
     long first_byte = current_opcodes & 0xff;
 
     if(bp != NULL && first_byte == 0xcc){
@@ -319,23 +328,23 @@ int step_over_bp(pid_t pid){
         }
         unsigned orignal_byte = bp->orig_data & 0xff;
         long original_opcode = ((current_opcodes >> 8) << 8) | orignal_byte ;
-        ptrace(PTRACE_POKEDATA,process_to_debug.pid,bp_rip,original_opcode);
+        ptrace(PTRACE_POKEDATA, pid,bp_rip,original_opcode);
         regs.rip -= 1;
-        set_registers(process_to_debug.pid,&regs);
+        set_registers(pid,&regs);
         int status;
 
         if((bp->type & TEMP) == TEMP){ //not temporary breakpoint
-            ptrace(PTRACE_SINGLESTEP,process_to_debug.pid,NULL,0);
-            waitpid(process_to_debug.pid, &status,0);
+            ptrace(PTRACE_SINGLESTEP,pid,NULL,0);
+            waitpid(pid, &status,0);
             if(WIFSTOPPED(status)){
                 delete_breakpoint(bp->index);
             }
         }
         else{ //permanent breakpoint
-            ptrace(PTRACE_SINGLESTEP,process_to_debug.pid,NULL,0);
-            waitpid(process_to_debug.pid, &status,0);
+            ptrace(PTRACE_SINGLESTEP,pid,NULL,0);
+            waitpid(pid, &status,0);
             if(WIFSTOPPED(status)){
-                ptrace(PTRACE_POKEDATA,process_to_debug.pid,bp_rip,current_opcodes);
+                ptrace(PTRACE_POKEDATA,pid,bp_rip,current_opcodes);
             }
         }
         return 1;

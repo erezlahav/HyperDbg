@@ -4,8 +4,11 @@
 
 #include "maps_parsing.h"
 
-
+#ifndef PAGE_SIZE
 #define PAGE_SIZE 4096
+#endif
+
+
 #define PAGE_ALIGN(size) (((size) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1))
 
 

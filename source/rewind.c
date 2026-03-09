@@ -182,12 +182,11 @@ int restore_pages(arr_pages* pages_arr){
 int restore_permissions(regions_array* arr_regions){
 
     for(int i = 0; i < arr_regions->regions_count;i++){
-        if(((arr_regions->arr[i].permissions) & WRITE) != 0){
-            int permissions = PROT_WRITE;
-            if(((arr_regions->arr[i].permissions) & READ) != 0) permissions |= PROT_READ;
-            if(((arr_regions->arr[i].permissions) & EXECUTE) != 0) permissions |= PROT_EXEC;
-            inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
-        }
+        int permissions = 0;
+        if(((arr_regions->arr[i].permissions) & WRITE) != 0) permissions |= PROT_WRITE;
+        if(((arr_regions->arr[i].permissions) & READ) != 0) permissions |= PROT_READ;
+        if(((arr_regions->arr[i].permissions) & EXECUTE) != 0) permissions |= PROT_EXEC;
+        inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
     }
     return 1;
 }

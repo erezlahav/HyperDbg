@@ -2,7 +2,7 @@
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -g -Iinclude
+CFLAGS = -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -g -Iinclude
 
 # Directories
 SRC_DIR = source

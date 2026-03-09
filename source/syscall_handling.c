@@ -22,6 +22,7 @@ extern debugee_process process_to_debug;
 #define SYSCALL_OPCODE 0x050f
 #define MAX_SYSCALLS 1000
 #define MAX_FILENAME_SIZE 50
+
 //system call in 64 bit linux systems
 //rax - syscall number
 //rdi - first argument
@@ -91,7 +92,7 @@ int syscall_handle(struct user_regs_struct* regs){
         printf(GREEN "\n(PROC) " RESET);
         fflush(stdout);
     }
-    step_over_bp(process_to_debug.pid);   
+    step_over_bp(process_to_debug.pid); 
     fflush(stdout);
     // after syscall
 
@@ -130,7 +131,7 @@ int syscall_handle(struct user_regs_struct* regs){
     }
     
     else if(syscall_number == __NR_munmap && return_val != -1){ //hook to munmap
-        long address = first_arg;
+        void* address = (void*)first_arg;
         if(process_to_debug.current_snapshot != NULL){ //during record
             
             add_live_mmap(&process_to_debug.current_snapshot->current_mmaps_head, MUNMAP,address, second_arg,0,0,0,0);
@@ -142,6 +143,8 @@ int syscall_handle(struct user_regs_struct* regs){
             }
         }
     }  
+
+
 
     if(hooked){
         printf("%s returned : %ld\n",entry->name,return_val);
@@ -200,6 +203,7 @@ int patch_syscalls_to_bps(long start,long end){
 
 int default_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
     printf(YELLOW "[HOOK]" RESET " %s(arg1=%lld, arg2=%lld, arg3=%lld, arg4=%lld)\n",syscall_name,regs->rdi, regs->rsi, regs->rdx, regs->r10);
+    return 1;
 }
 
 int write_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
@@ -214,6 +218,7 @@ int write_handler(char* syscall_name, long syscall_number, struct user_regs_stru
     
     change_params(syscall_name, params);
     ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
+    return 1;
 }
 
 int read_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
@@ -228,6 +233,7 @@ int read_handler(char* syscall_name, long syscall_number, struct user_regs_struc
     
     change_params(syscall_name, params);
     ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
+    return 1;
 }
 
 int open_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
@@ -245,6 +251,7 @@ int open_handler(char* syscall_name, long syscall_number, struct user_regs_struc
     
     change_params(syscall_name, params);
     ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
+    return 1;
 }
 
 int openat_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
@@ -263,6 +270,7 @@ int openat_handler(char* syscall_name, long syscall_number, struct user_regs_str
     
     change_params(syscall_name, params);
     ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
+    return 1;
 }
 
 
