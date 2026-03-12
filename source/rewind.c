@@ -191,7 +191,7 @@ int restore_permissions(regions_array* arr_regions){
     return 1;
 }
 
-int delete_record(){
+int delete_record(int restore_perm){
     snapshot* snapshot = process_to_debug.current_snapshot;
     if(snapshot == NULL){
         printf("no snapshots saved yet\n");
@@ -199,6 +199,8 @@ int delete_record(){
     }
 
     regions_array* arr_regions = snapshot->arr_of_regions;
+    if(restore_perm) restore_permissions(arr_regions);
+
 
     free(snapshot->pages_array->pages);
     free(snapshot->pages_array);

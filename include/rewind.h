@@ -64,7 +64,7 @@ void remote_read_string(pid_t pid, long remote_addr, char* buf, int maxlen);
 int remote_write(void* local_addr,void* remote_addr,size_t size);
 int restore_pages(arr_pages* pages_arr);
 int restore_permissions(regions_array* arr_regions);
-int delete_record();
+int delete_record(int restore_perm);
 
 int add_live_mmap(live_mmap_node** head, mmap_type type, void* addr, size_t size, int prot, int flags,int fd, off_t offset);
 int remove_live_mmap(live_mmap_node** head, void* addr,mmap_type type);

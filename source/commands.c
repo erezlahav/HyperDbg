@@ -187,7 +187,7 @@ int cmd_delete(int argc,char** argv){
             }
         }
         else if(strcmp(argv[1],"record") == 0){
-            delete_record();
+            delete_record(1);
         }            
     }
     else{
@@ -344,7 +344,7 @@ int rewind_snapshot(int argc,char** argv){
     restore_permissions(arr_regions);
     rewind_all_live_mmaps(); 
     restore_pages(pages_arr);
-    delete_record();
+    delete_record(0);
     return 1;
 }
 
