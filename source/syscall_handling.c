@@ -14,14 +14,15 @@
 #include "breakpoint.h"
 #include "commands.h"
 #include "colors.h"
-
+#include "syscall_injection.h"
 
 
 extern debugee_process process_to_debug;
 
+#define SCRATCH_BUFFER_SIZE 4096 * 2
 #define SYSCALL_OPCODE 0x050f
 #define MAX_SYSCALLS 1000
-#define MAX_FILENAME_SIZE 50
+#define MAX_STR_READ 50
 
 //system call in 64 bit linux systems
 //rax - syscall number
@@ -207,13 +208,16 @@ int default_handler(char* syscall_name, long syscall_number, struct user_regs_st
 }
 
 int write_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
-    printf(YELLOW "[HOOK]" RESET " %s(fd=%lld, buf=" BLUE "0x%016llx" RESET ", count=%lld)\n",syscall_name,regs->rdi, regs->rsi, regs->rdx);
+
+    long buffer_addr = regs->rsi;
+    char* buffer = read_remote_str(buffer_addr,regs->rdx);
+    printf(YELLOW "[HOOK]" RESET " %s(fd=%lld, buf=\"%s\", count=%lld)\n",syscall_name,regs->rdi, buffer, regs->rdx);
 
     syscall_param params[] = {
-        {"fd",&regs->rdi},
-        {"buf",&regs->rsi},
-        {"count",&regs->rdx},
-        {NULL,NULL}
+        {"fd",&regs->rdi,INTEGER},
+        {"buf",&regs->rsi,STRING},
+        {"count",&regs->rdx,INTEGER},
+        {NULL,NULL,0}
     };
     
     change_params(syscall_name, params);
@@ -225,10 +229,10 @@ int read_handler(char* syscall_name, long syscall_number, struct user_regs_struc
     printf(YELLOW "[HOOK]" RESET " %s(fd=%lld, buf=" BLUE "0x%016llx" RESET ", count=%lld)\n",syscall_name,regs->rdi, regs->rsi, regs->rdx);
 
     syscall_param params[] = {
-        {"fd",&regs->rdi},
-        {"buf",&regs->rsi},
-        {"count",&regs->rdx},
-        {NULL,NULL}
+        {"fd",&regs->rdi,INTEGER},
+        {"buf",&regs->rsi,ADDRESS},
+        {"count",&regs->rdx,INTEGER},
+        {NULL,NULL,0}
     };
     
     change_params(syscall_name, params);
@@ -238,15 +242,15 @@ int read_handler(char* syscall_name, long syscall_number, struct user_regs_struc
 
 int open_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
     long filename_addr = regs->rdi;
-    char* filename = read_remote_str(filename_addr);
+    char* filename = read_remote_str(filename_addr,-1);
 
-    printf(YELLOW "[HOOK]" RESET " %s(filename=%s, flags=%lld, mode=%lld)\n",syscall_name,filename, regs->rsi, regs->rdx);
+    printf(YELLOW "[HOOK]" RESET " %s(filename=\"%s\", flags=%lld, mode=%lld)\n",syscall_name,filename, regs->rsi, regs->rdx);
 
     syscall_param params[] = {
-        {"filename",&regs->rdi},
-        {"flags",&regs->rsi},
-        {"mode",&regs->rdx},
-        {NULL,NULL}
+        {"filename",&regs->rdi,STRING},
+        {"flags",&regs->rsi,INTEGER},
+        {"mode",&regs->rdx,INTEGER},
+        {NULL,NULL,0}
     };
     
     change_params(syscall_name, params);
@@ -257,15 +261,15 @@ int open_handler(char* syscall_name, long syscall_number, struct user_regs_struc
 int openat_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
 
     long filename_addr = regs->rsi;
-    char* filename = read_remote_str(filename_addr);
+    char* filename = read_remote_str(filename_addr,-1);
     printf(YELLOW "[HOOK]" RESET " %s(dfd=%lld, filename=\"%s\", flags=%lld, mode=%lld)\n",syscall_name,regs->rdi, filename, regs->rdx,regs->r10);
 
     syscall_param params[] = {
-        {"dfd",&regs->rdi},
-        {"filename",&regs->rsi},
-        {"flags",&regs->rdx},
-        {"mode",&regs->r10},
-        {NULL,NULL}
+        {"dfd",&regs->rdi,INTEGER},
+        {"filename",&regs->rsi,STRING},
+        {"flags",&regs->rdx,INTEGER},
+        {"mode",&regs->r10,INTEGER},
+        {NULL,NULL,0}
     };
     
     change_params(syscall_name, params);
@@ -283,25 +287,52 @@ void change_params(const char* syscall_name, syscall_param* params){
     printf("You can modify the parameters. Type 'continue' or 'c' to run the syscall.\n");
     char cmd[256];
 
-    while(1)
-    {
+
+
+    if(process_to_debug.scratch_buffer == NULL){
+        process_to_debug.scratch_buffer = (void*)inject_mmap(0, SCRATCH_BUFFER_SIZE ,PROT_READ | PROT_WRITE,MAP_PRIVATE | MAP_ANONYMOUS , 0,0);
+    }
+
+
+    while(1){
         printf(DARK_PURPLE "hyperdbg> " RESET);
         fgets(cmd,sizeof(cmd),stdin);
 
         if(strncmp(cmd,"continue",8)==0 || strncmp(cmd,"c",1)==0)
             break;
 
-        char param[64];
+
         long val;
 
-        if(sscanf(cmd,"set %s %ld",param,&val)==2)
+        char param[64];
+        char val_str[1024]; 
+
+        if(sscanf(cmd,"set %63s %1023[^\n]",param,val_str) == 2)
         {
             for(int i=0; params[i].name!=NULL; i++)
             {
-                if(strcmp(param,params[i].name)==0)
+                if(strcmp(param, params[i].name) == 0)
                 {
-                    *params[i].reg = val; //change the register value
-                    printf("%s updated\n",param);
+                    if(params[i].type == STRING)
+                    {
+                        size_t len = strlen(val_str) + 1;
+                        if(len > SCRATCH_BUFFER_SIZE) len = SCRATCH_BUFFER_SIZE;
+                        
+                        
+                        remote_write(val_str,process_to_debug.scratch_buffer,len);
+
+
+
+                        *params[i].reg = (unsigned long)process_to_debug.scratch_buffer;
+
+                        printf("%s updated to : %s\n",param, val_str);
+                    }
+                    else
+                    {
+                        long val = strtol(val_str, NULL, 0); 
+                        *params[i].reg = val;
+                        printf("%s updated to : %ld\n", param, val);
+                    }
                     break;
                 }
             }
@@ -316,8 +347,19 @@ void change_params(const char* syscall_name, syscall_param* params){
 
 
 
-char* read_remote_str(long remote_addr){
-    char* filename = malloc(MAX_FILENAME_SIZE);
-    remote_read_string(process_to_debug.pid, remote_addr, filename, MAX_FILENAME_SIZE);
-    return filename;
+char* read_remote_str(long remote_addr,int count){
+    char* str;
+    if(count == -1){
+        str = malloc(MAX_STR_READ);
+        remote_read_string(process_to_debug.pid, remote_addr, str, MAX_STR_READ);
+    }
+    else{
+        str = malloc(count+1);
+        remote_copy(str,remote_addr,count);
+        str[count] = '\x00';
+    }
+    return str;
 }
+
+
+

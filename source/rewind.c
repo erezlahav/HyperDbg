@@ -149,6 +149,9 @@ void remote_read_string(pid_t pid, long remote_addr, char* buf, int maxlen){
 }
 
 
+
+
+
 int remote_write(void* local_addr,void* remote_addr,size_t size){
     struct iovec local_iov = { local_addr, size };
     struct iovec remote_iov = { remote_addr, size };

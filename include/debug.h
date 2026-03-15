@@ -33,6 +33,7 @@ typedef struct{
     snapshot* current_snapshot;
     symbols_array* array_of_symbols;
     live_mmap_node* live_mmaps; 
+    void* scratch_buffer;
 }debugee_process;
 
 

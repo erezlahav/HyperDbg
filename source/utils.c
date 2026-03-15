@@ -68,7 +68,6 @@ char* get_elf_path_by_pid(pid_t pid){
         return NULL;
     }
     elf_path[bytes_read] = '\x00';
-    printf("%s\n",elf_path);
     return elf_path;
 }
 

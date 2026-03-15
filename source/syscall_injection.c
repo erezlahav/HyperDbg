@@ -26,7 +26,7 @@ extern debugee_process process_to_debug;
         remote_syscall(process_to_debug.pid,1,1,regs.rsp-0x100,4,0,0,0);
 */ 
 
-long remote_syscall( //still in maitnence
+long remote_syscall(
     pid_t tid,
     long syscall_number,
     long arg1,
@@ -71,21 +71,25 @@ long remote_syscall( //still in maitnence
 
     ptrace(PTRACE_POKEDATA,tid,original_adress,original_opcode);
     ptrace(PTRACE_SETREGS,tid,NULL,&saved_regs);
-    
-    return return_registers.rax;
+
+
+
+    long ret = return_registers.rax;
+
+    return ret;
 
 }
 
 
-int inject_mprotect(long adress,size_t size,int permissions){
+long inject_mprotect(long adress,size_t size,int permissions){
     return remote_syscall(process_to_debug.pid,MPROTECT_SYSCALL_NUMBER,adress,size,permissions,0,0,0);
 }
 
-int inject_mmap(long adress,size_t size,int prot, int flags, int fd,size_t offset){
+long inject_mmap(long adress,size_t size,int prot, int flags, int fd,size_t offset){
     return remote_syscall(process_to_debug.pid, MMAP_SYSCALL_NUMBER, adress, size, prot, flags, fd, offset);
 }
 
-int inject_munmap(long adress,size_t size){
+long inject_munmap(long adress,size_t size){
     return remote_syscall(process_to_debug.pid,MUNMAP_SYSCALL_NUMBER,adress,size,0,0,0,0); //zeros doesnt matter 
 }
 
