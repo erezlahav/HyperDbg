@@ -47,5 +47,6 @@ int write_handler(char* syscall_name, long syscall_number, struct user_regs_stru
 int read_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
 int open_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
 int openat_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
+int sendto_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs);
 void change_params(const char* syscall_name, syscall_param* params);
 char* read_remote_str(long remote_addr,int count);

@@ -45,7 +45,7 @@ syscall_entry syscalls[] = {
     {"socket",__NR_socket,NULL},
     {"connect",__NR_connect,NULL},
     {"accept",__NR_accept,NULL},
-
+    {"sendto",__NR_sendto,sendto_handler},
     {"openat",__NR_openat,openat_handler},
     {NULL,-1,NULL}
 };
@@ -174,6 +174,7 @@ int put_syscalls_bps(){
             int res = patch_syscalls_to_bps(process_to_debug.array_of_regions.arr[i].start , process_to_debug.array_of_regions.arr[i].end);
         }
     }
+    return 1;
 }
 
 
@@ -194,7 +195,7 @@ int patch_syscalls_to_bps(long start,long end){
         }
     }
     free(code_buffer);
-
+    return 1;
 }
 
 
@@ -204,6 +205,22 @@ int patch_syscalls_to_bps(long start,long end){
 
 int default_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
     printf(YELLOW "[HOOK]" RESET " %s(arg1=%lld, arg2=%lld, arg3=%lld, arg4=%lld)\n",syscall_name,regs->rdi, regs->rsi, regs->rdx, regs->r10);
+
+
+    syscall_param params[] = {
+        {"arg1",&regs->rdi,INTEGER},
+        {"arg2",&regs->rsi,STRING},
+        {"arg3",&regs->rdx,INTEGER},
+        {"arg4",&regs->r10,INTEGER},
+        {"arg5",&regs->r8,INTEGER},
+        {"arg6",&regs->r9,INTEGER},
+        {NULL,NULL,0}
+    };
+
+    change_params(syscall_name, params);
+    ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
+
+
     return 1;
 }
 
@@ -278,6 +295,27 @@ int openat_handler(char* syscall_name, long syscall_number, struct user_regs_str
 }
 
 
+int sendto_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
+
+    long buffer_addr = regs->rsi;
+    long long buffer_length = regs->rdx;
+    char* buffer = read_remote_str(buffer_addr,buffer_length);
+
+    printf(YELLOW "[HOOK]" RESET " %s(fd=%lld, buf=\"%s\", len=%lld,flags=%lld)\n",syscall_name,regs->rdi, buffer, buffer_length,regs->r10);
+    
+    syscall_param params[] = {
+        {"fd",&regs->rdi,INTEGER},
+        {"buf",&regs->rsi,STRING},
+        {"count",&regs->rdx,INTEGER},
+        {"flags",regs->r10,INTEGER},
+        {NULL,NULL,0}
+    };
+    
+    change_params(syscall_name, params);
+    ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
+    
+    return 1;
+}
 
 
 
