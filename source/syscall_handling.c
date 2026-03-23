@@ -36,20 +36,58 @@ extern debugee_process process_to_debug;
 
 char hooked_syscalls[1000] = {0};
 
-syscall_entry syscalls[] = {
-    {"read",__NR_read,read_handler},
-    {"write",__NR_write,write_handler},
-    {"open",__NR_open,open_handler},
-    {"close",__NR_close,NULL},
-    {"mmap",__NR_mmap,NULL},
-    {"socket",__NR_socket,NULL},
-    {"connect",__NR_connect,NULL},
-    {"accept",__NR_accept,NULL},
-    {"sendto",__NR_sendto,sendto_handler},
-    {"openat",__NR_openat,openat_handler},
-    {NULL,-1,NULL}
-};
 
+#define P(...) { __VA_ARGS__, {0} }
+#define NO_PARAMS { {0} }
+
+syscall_entry syscalls[] = {
+    // ===== FILE I/O =====
+    { "read",     __NR_read,     P({"fd",NULL,INTEGER}, {"buf",NULL,ADDRESS}, {"count",NULL,INTEGER}) },
+    { "write",    __NR_write,    P({"fd",NULL,INTEGER}, {"buf",NULL,STRING},  {"count",NULL,INTEGER}) },
+    { "open",     __NR_open,     P({"filename",NULL,STRING}, {"flags",NULL,INTEGER}, {"mode",NULL,INTEGER}) },
+    { "openat",   __NR_openat,   P({"dfd",NULL,INTEGER}, {"filename",NULL,STRING}, {"flags",NULL,INTEGER}, {"mode",NULL,INTEGER}) },
+    { "close",    __NR_close,    P({"fd",NULL,INTEGER}) },
+    { "lseek",    __NR_lseek,    P({"fd",NULL,INTEGER}, {"offset",NULL,INTEGER}, {"whence",NULL,INTEGER}) },
+
+    // ===== MEMORY =====
+    { "mmap",     __NR_mmap,     P({"addr",NULL,ADDRESS}, {"length",NULL,INTEGER}, {"prot",NULL,INTEGER}, {"flags",NULL,INTEGER}, {"fd",NULL,INTEGER}, {"offset",NULL,INTEGER}) },
+    { "munmap",   __NR_munmap,   P({"addr",NULL,ADDRESS}, {"length",NULL,INTEGER}) },
+    { "mprotect", __NR_mprotect, P({"addr",NULL,ADDRESS}, {"len",NULL,INTEGER}, {"prot",NULL,INTEGER}) },
+    { "brk",      __NR_brk,      P({"addr",NULL,ADDRESS}) },
+
+    // ===== PROCESS =====
+    { "fork",     __NR_fork,     NO_PARAMS },
+    { "vfork",    __NR_vfork,    NO_PARAMS },
+    { "clone",    __NR_clone,    P({"flags",NULL,INTEGER}, {"stack",NULL,ADDRESS}, {"ptid",NULL,ADDRESS}, {"ctid",NULL,ADDRESS}, {"tls",NULL,ADDRESS}) },
+    { "execve",   __NR_execve,   P({"filename",NULL,STRING}, {"argv",NULL,ADDRESS}, {"envp",NULL,ADDRESS}) },
+    { "exit",     __NR_exit,     P({"status",NULL,INTEGER}) },
+    { "wait4",    __NR_wait4,    P({"pid",NULL,INTEGER}, {"status",NULL,ADDRESS}, {"options",NULL,INTEGER}, {"rusage",NULL,ADDRESS}) },
+    { "getpid",   __NR_getpid,   NO_PARAMS },
+
+    // ===== FD / IOCTL =====
+    { "dup",      __NR_dup,      P({"oldfd",NULL,INTEGER}) },
+    { "dup2",     __NR_dup2,     P({"oldfd",NULL,INTEGER}, {"newfd",NULL,INTEGER}) },
+    { "fcntl",    __NR_fcntl,    P({"fd",NULL,INTEGER}, {"cmd",NULL,INTEGER}, {"arg",NULL,INTEGER}) },
+    { "ioctl",    __NR_ioctl,    P({"fd",NULL,INTEGER}, {"request",NULL,INTEGER}, {"argp",NULL,ADDRESS}) },
+
+    // ===== NETWORK =====
+    { "socket",   __NR_socket,   P({"domain",NULL,INTEGER}, {"type",NULL,INTEGER}, {"protocol",NULL,INTEGER}) },
+    { "connect",  __NR_connect,  P({"sockfd",NULL,INTEGER}, {"addr",NULL,ADDRESS}, {"addrlen",NULL,INTEGER}) },
+    { "accept",   __NR_accept,   P({"sockfd",NULL,INTEGER}, {"addr",NULL,ADDRESS}, {"addrlen",NULL,ADDRESS}) },
+    { "bind",     __NR_bind,     P({"sockfd",NULL,INTEGER}, {"addr",NULL,ADDRESS}, {"addrlen",NULL,INTEGER}) },
+    { "listen",   __NR_listen,   P({"sockfd",NULL,INTEGER}, {"backlog",NULL,INTEGER}) },
+    { "recvfrom", __NR_recvfrom, P({"fd",NULL,INTEGER}, {"buf",NULL,ADDRESS}, {"len",NULL,INTEGER}, {"flags",NULL,INTEGER}, {"src_addr",NULL,ADDRESS}, {"addrlen",NULL,ADDRESS}) },
+    { "sendto",   __NR_sendto,   P({"fd",NULL,INTEGER}, {"buf",NULL,STRING}, {"count",NULL,INTEGER}, {"flags",NULL,INTEGER}, {"dest_addr",NULL,ADDRESS}, {"addrlen",NULL,INTEGER}) },
+
+    // ===== TIME =====
+    { "nanosleep", __NR_nanosleep, P({"req",NULL,ADDRESS}, {"rem",NULL,ADDRESS}) },
+
+    // ===== SIGNALS =====
+    { "kill",     __NR_kill,     P({"pid",NULL,INTEGER}, {"sig",NULL,INTEGER}) },
+
+    // ===== END =====
+    { NULL, -1, NO_PARAMS }
+};
 
 
 syscall_entry* get_syscall_entry_by_number(int syscall_number){
@@ -66,17 +104,11 @@ int syscall_handle(struct user_regs_struct* regs){
 
     //check if this syscall is supposed to be hooked
     syscall_entry* entry = get_syscall_entry_by_number(regs->rax);
-    
-    if(entry != NULL && hooked_syscalls[entry->number]){
-        hooked = 1;
-        if(entry->handler != NULL){
-            entry->handler(entry->name,entry->number,regs);
-        }
-        else {
-            default_handler(entry->name,entry->number,regs);
-        }
-    }
 
+    if(entry != NULL && hooked_syscalls[entry->number]){
+        hooked_syscall_handler(entry,regs);
+        hooked = 1;
+    }
 
     struct user_regs_struct* final_syscall_regs = regs;
     long syscall_number = final_syscall_regs->rax;
@@ -201,123 +233,56 @@ int patch_syscalls_to_bps(long start,long end){
 
 
 
+int hooked_syscall_handler(syscall_entry* entry, struct user_regs_struct* regs){
+    printf(YELLOW "[HOOK] " RESET "%s(",entry->name);
 
-
-int default_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
-    printf(YELLOW "[HOOK]" RESET " %s(arg1=%lld, arg2=%lld, arg3=%lld, arg4=%lld)\n",syscall_name,regs->rdi, regs->rsi, regs->rdx, regs->r10);
-
-
-    syscall_param params[] = {
-        {"arg1",&regs->rdi,INTEGER},
-        {"arg2",&regs->rsi,STRING},
-        {"arg3",&regs->rdx,INTEGER},
-        {"arg4",&regs->r10,INTEGER},
-        {"arg5",&regs->r8,INTEGER},
-        {"arg6",&regs->r9,INTEGER},
-        {NULL,NULL,0}
+    unsigned long* regs_array[6] = {
+        &regs->rdi,
+        &regs->rsi,
+        &regs->rdx,
+        &regs->r10,
+        &regs->r8,
+        &regs->r9
     };
 
-    change_params(syscall_name, params);
-    ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
+    for(int i = 0; entry->params[i].name != NULL;i++){
+        entry->params[i].reg = regs_array[i];
+        if(i != 0) printf(", ");
 
+        printf("%s=",entry->params[i].name);
+        switch(entry->params[i].type){
+            case INTEGER:
+                printf("%lld",*entry->params[i].reg);
+                break;
+            case STRING:
+                char* buffer;
+                long buffer_addr = *entry->params[i].reg;
+                if( (strcmp(entry->name,"write")   == 0 ||
+                    strcmp(entry->name,"sendto")  == 0 ||
+                    strcmp(entry->name,"read")    == 0 ||
+                    strcmp(entry->name,"recvfrom")== 0 ||
+                    strcmp(entry->name,"readv")   == 0 ||
+                    strcmp(entry->name,"writev")  == 0) 
+                    && i+1 < 6) 
+                {
+                    buffer = read_remote_str(buffer_addr, *regs_array[i+1]);
+                }
 
-    return 1;
-}
+                else buffer = read_remote_str(buffer_addr,-1);
 
-int write_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
-
-    long buffer_addr = regs->rsi;
-    char* buffer = read_remote_str(buffer_addr,regs->rdx);
-    printf(YELLOW "[HOOK]" RESET " %s(fd=%lld, buf=\"%s\", count=%lld)\n",syscall_name,regs->rdi, buffer, regs->rdx);
-
-    syscall_param params[] = {
-        {"fd",&regs->rdi,INTEGER},
-        {"buf",&regs->rsi,STRING},
-        {"count",&regs->rdx,INTEGER},
-        {NULL,NULL,0}
-    };
-    
-    change_params(syscall_name, params);
-    ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
-    return 1;
-}
-
-int read_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
-    printf(YELLOW "[HOOK]" RESET " %s(fd=%lld, buf=" BLUE "0x%016llx" RESET ", count=%lld)\n",syscall_name,regs->rdi, regs->rsi, regs->rdx);
-
-    syscall_param params[] = {
-        {"fd",&regs->rdi,INTEGER},
-        {"buf",&regs->rsi,ADDRESS},
-        {"count",&regs->rdx,INTEGER},
-        {NULL,NULL,0}
-    };
-    
-    change_params(syscall_name, params);
+                printf("\"%s\"",buffer);
+                break;
+            case ADDRESS:
+                printf(BLUE "0x%016llx" RESET,*entry->params[i].reg);
+                break;
+            
+        }
+    }
+    printf(")\n");
+    change_params(entry->name, entry->params);
     ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
     return 1;
 }
-
-int open_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
-    long filename_addr = regs->rdi;
-    char* filename = read_remote_str(filename_addr,-1);
-
-    printf(YELLOW "[HOOK]" RESET " %s(filename=\"%s\", flags=%lld, mode=%lld)\n",syscall_name,filename, regs->rsi, regs->rdx);
-
-    syscall_param params[] = {
-        {"filename",&regs->rdi,STRING},
-        {"flags",&regs->rsi,INTEGER},
-        {"mode",&regs->rdx,INTEGER},
-        {NULL,NULL,0}
-    };
-    
-    change_params(syscall_name, params);
-    ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
-    return 1;
-}
-
-int openat_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
-
-    long filename_addr = regs->rsi;
-    char* filename = read_remote_str(filename_addr,-1);
-    printf(YELLOW "[HOOK]" RESET " %s(dfd=%lld, filename=\"%s\", flags=%lld, mode=%lld)\n",syscall_name,regs->rdi, filename, regs->rdx,regs->r10);
-
-    syscall_param params[] = {
-        {"dfd",&regs->rdi,INTEGER},
-        {"filename",&regs->rsi,STRING},
-        {"flags",&regs->rdx,INTEGER},
-        {"mode",&regs->r10,INTEGER},
-        {NULL,NULL,0}
-    };
-    
-    change_params(syscall_name, params);
-    ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
-    return 1;
-}
-
-
-int sendto_handler(char* syscall_name, long syscall_number, struct user_regs_struct* regs){
-
-    long buffer_addr = regs->rsi;
-    long long buffer_length = regs->rdx;
-    char* buffer = read_remote_str(buffer_addr,buffer_length);
-
-    printf(YELLOW "[HOOK]" RESET " %s(fd=%lld, buf=\"%s\", len=%lld,flags=%lld)\n",syscall_name,regs->rdi, buffer, buffer_length,regs->r10);
-    
-    syscall_param params[] = {
-        {"fd",&regs->rdi,INTEGER},
-        {"buf",&regs->rsi,STRING},
-        {"count",&regs->rdx,INTEGER},
-        {"flags",regs->r10,INTEGER},
-        {NULL,NULL,0}
-    };
-    
-    change_params(syscall_name, params);
-    ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
-    
-    return 1;
-}
-
-
 
 
 
