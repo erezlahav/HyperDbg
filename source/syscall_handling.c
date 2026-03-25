@@ -270,7 +270,10 @@ int hooked_syscall_handler(syscall_entry* entry, struct user_regs_struct* regs){
 
                 else buffer = read_remote_str(buffer_addr,-1);
 
-                printf("\"%s\"",buffer);
+                printf("\"");
+                print_escaped_string(buffer);
+                printf("\"");
+
                 break;
             case ADDRESS:
                 printf(BLUE "0x%016llx" RESET,*entry->params[i].reg);
@@ -283,6 +286,10 @@ int hooked_syscall_handler(syscall_entry* entry, struct user_regs_struct* regs){
     ptrace(PTRACE_SETREGS, process_to_debug.pid, 0, regs);
     return 1;
 }
+
+
+
+
 
 
 
@@ -366,3 +373,15 @@ char* read_remote_str(long remote_addr,int count){
 
 
 
+void print_escaped_string(const char* str){
+    for (size_t i = 0; str[i]; i++) {
+        switch(str[i]) {
+            case '\n': printf("\\n"); break;
+            case '\t': printf("\\t"); break;
+            case '\r': printf("\\r"); break;
+            case '\\': printf("\\\\"); break;
+            case '\"': printf("\\\""); break;
+            default:   putchar(str[i]); break;
+        }
+    }
+}

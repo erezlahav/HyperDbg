@@ -50,8 +50,8 @@ int run_process(int argc,char** argv){
             break_symbol("_start",TEMP | SOFTWARE | INTERNAL);
 
             process_to_debug.proc_state = STOPPED;
-            long base_adress = find_base();
-            update_adressing_of_symtab_symbols(process_to_debug.array_of_symbols, base_adress);
+            process_to_debug.base_address = find_base();
+            update_adressing_of_symtab_symbols(process_to_debug.array_of_symbols, process_to_debug.base_address);
             resolve_breakpoints();
             process_to_debug.proc_state = RUNNING;
             ptrace(PTRACE_CONT, process_to_debug.pid, NULL, NULL);

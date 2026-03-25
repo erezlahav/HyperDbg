@@ -44,3 +44,4 @@ int patch_syscalls_to_bps(long start,long end);
 int hooked_syscall_handler(syscall_entry* entry, struct user_regs_struct* regs);
 void change_params(const char* syscall_name, syscall_param* params);
 char* read_remote_str(long remote_addr,int count);
+void print_escaped_string(const char* str);

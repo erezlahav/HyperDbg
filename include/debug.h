@@ -25,6 +25,7 @@ typedef enum{
 typedef struct{
     char* elf_path;
     bool PIE;
+    long base_address;
     RUNNING_STATE proc_state;
     pid_t pid;
     long text_segment_offset_va;

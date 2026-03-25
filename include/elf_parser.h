@@ -57,3 +57,4 @@ symbol* get_symbols_from_section_header_symbol(Elf64_Shdr* symbol_section_header
 symbols_array* get_symbols_from_file(FILE* elf_file_ptr);
 symbol* find_symbol_by_name(symbols_array* array_of_symbols,char* name);
 void update_adressing_of_symtab_symbols(symbols_array* array_of_symbols,long base_binary);
+void print_plt_offsets(FILE* elf_file_ptr);

@@ -54,7 +54,7 @@ int main(int argc,char* argv[],char* envp[]){
             exit(0);
         }
         process_to_debug.PIE = get_pie_status(elf_target_ptr);
-        process_to_debug.text_segment_offset_va = get_loading_vaddr_of_text_segment(elf_target_ptr); //bug
+        process_to_debug.text_segment_offset_va = get_loading_vaddr_of_text_segment(elf_target_ptr);
         process_to_debug.array_of_symbols = get_symbols_from_file(elf_target_ptr);
         fclose(elf_target_ptr);
 
