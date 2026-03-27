@@ -124,7 +124,7 @@ int handle_stopped_process(pid_t pid, int status){
         }
         else{ //TF from si/ni
             symbol* bp_symbol = get_symbol_by_adress(regs.rip);
-            printf(BLUE "0x%016lx " RESET,bp_rip);
+            printf(BLUE "0x%016lx " RESET,regs.rip);
             if(bp_symbol) printf("in " YELLOW "%s ()" RESET,bp_symbol->name);
             else{
                 char* name = get_region_name_by_address(regs.rip);

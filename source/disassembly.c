@@ -48,10 +48,37 @@ void print_disassemble_bytes(unsigned char* bytes_array,size_t size,long start_a
         user_count = count;
 
 
+    struct user_regs_struct regs;
+    long rip = 0;
+    if(!(process_to_debug.proc_state == NOT_LOADED || process_to_debug.proc_state == LOADED) ){
+        get_registers(process_to_debug.pid, &regs); 
+        rip = regs.rip;
+        if(get_breakpoint_by_addr(regs.rip-1)) rip--;
+    }
 
     if (count > 0) {
         for (size_t i = 0; i < count && i < user_count; i++) {
-            printf(BLUE "0x%016lx" GREEN "\t%s" RESET "\t%s\n",insn[i].address,insn[i].mnemonic,insn[i].op_str);
+            if(insn[i].address == rip) printf("=> " BLUE "0x%016lx" GREEN "\t%s" RESET "\t",insn[i].address,insn[i].mnemonic);
+            else printf(BLUE "   0x%016lx" GREEN "\t%s" RESET "\t",insn[i].address,insn[i].mnemonic);
+
+            if(strncmp(insn[i].mnemonic, "call", 4) == 0 || strncmp(insn[i].mnemonic, "jmp", 3) == 0){
+                uint64_t target = 0;
+                if(insn[i].op_str[0]=='0' && insn[i].op_str[1]=='x'){
+                    sscanf(insn[i].op_str, "%lx", &target);
+                    symbol* symbol = get_symbol_by_adress(target);
+                    printf(BLUE "0x%016lx" RESET,target);
+
+                    if(symbol){
+                        printf(" <" YELLOW "%s" RESET ">\n", symbol->name);
+                    }
+                    else printf("\n");
+                }
+            }
+            else{
+                printf("%s\n",insn[i].op_str);
+            }
+
+
         }
         cs_free(insn, count);
     }
