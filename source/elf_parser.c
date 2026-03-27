@@ -302,7 +302,7 @@ symbols_array* get_symbols_from_file(FILE* elf_file_ptr) {
 
     // merge dynsym and symtab
     symbol* all_symbols = malloc(sizeof(symbol) * (num_symtab + num_dynsym));
-    if (symtab_symbols) memcpy(all_symbols,              symtab_symbols, num_symtab * sizeof(symbol));
+    if (symtab_symbols) memcpy(all_symbols, symtab_symbols, num_symtab * sizeof(symbol));
     if (dynsym_symbols) memcpy(all_symbols + num_symtab, dynsym_symbols, num_dynsym * sizeof(symbol));
 
     symbols_array* array_of_symbols = malloc(sizeof(symbols_array));

@@ -19,6 +19,7 @@
 #include "utils.h"
 #include "rewind.h"
 #include "syscall_handling.h"
+#include "colors.h"
 
 extern debugee_process process_to_debug;
 
@@ -206,21 +207,29 @@ int print_backtrace(int argc,char** argv){
     unsigned long current_rbp = regs.rbp;
     unsigned long current_rip = regs.rip;
     symbol* current_symbol = get_symbol_by_adress(current_rip);
-    if(current_symbol == NULL){
-        printf("unknown symbol\n");
-        return 0;
-    }
+    char* name;
+    if(current_symbol) name = current_symbol->name;
+    else name = get_region_name_by_address(current_rip);
+
+
     int current_function_index = 0;
-    printf("#%d   %s\n",current_function_index,current_symbol->name);
+    if(name){
+        printf("#%d   " YELLOW "%s" RESET "\n",current_function_index,name);
+    }
     int max_depth = 64;
     
     while(current_rbp != 0 && current_function_index < max_depth){
         long return_adress = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,(void*)(current_rbp+8),NULL);
         current_rbp = ptrace(PTRACE_PEEKDATA,process_to_debug.pid,(void*)(current_rbp),NULL);
         current_symbol = get_symbol_by_adress(return_adress);
-        if(current_symbol == NULL) break;
+
+        if(current_symbol) name = current_symbol->name;
+        else name = get_region_name_by_address(return_adress);
+
+        if(name == NULL) break;
+
         current_function_index++;
-        printf("#%d   %s\n",current_function_index,current_symbol->name);
+        printf("#%d   " YELLOW "%s" RESET "\n",current_function_index,name);
     }
     return 1;
 }
@@ -304,10 +313,11 @@ int record(int argc,char** argv){
     save_snapshot();
     snapshot* snapshot = process_to_debug.current_snapshot;
     regions_array* arr_regions = snapshot->arr_of_regions;
+
     for(int i = 0; i < arr_regions->regions_count;i++){
         if(((arr_regions->arr[i].permissions) & WRITE) != 0){
             int permissions = PROT_READ;
-            if(((arr_regions->arr[i].permissions) & EXECUTE) == 0) permissions |= PROT_EXEC;
+            if(((arr_regions->arr[i].permissions) & EXECUTE) != 0) permissions |= PROT_EXEC;
             if(arr_regions->arr[i].type != UNKNOWN){
                 inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
             }

@@ -46,3 +46,5 @@ void print_region(memory_region* region);
 char* read_maps(pid_t pid);
 long find_base();
 int parse_maps(pid_t pid,regions_array* arr_regions);
+char* get_region_name_by_address(long address);
+char* get_region_name_by_enum(int enum_number);

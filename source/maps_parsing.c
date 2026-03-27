@@ -95,41 +95,9 @@ void print_mem_regions(regions_array* arr_regions){
 
 void print_region(memory_region* region){
     printf("mem region : ");
-    switch (region->type){
-        case 0:
-            printf("BINARY");
-            break;
-        case 1:
-            printf("HEAP");
-            break;
-        case 2:
-            printf("STACK");
-            break;
-        case 3:
-            printf("DATA");
-            break;
-        case 4:
-            printf("DATA_LOADER");
-            break;
-        case 5:
-            printf("DATA_LIBC");
-            break;
-        case 6:
-            printf("LOADER_CODE");
-            break;
-        case 7:
-            printf("LIBC_CODE");
-            break;
-        case 8:
-            printf("VDSO");
-            break;
-        case 9:
-            printf("UNKNOWN");
-            break;
-            
-        }
-
-        printf(", start : %lx, end : %lx,permissions : %d\n",region->start, region->end,region->permissions);
+    char* region_name = get_region_name_by_enum(region->type);
+    printf("%s", region_name);
+    printf(", start : %lx, end : %lx,permissions : %d\n",region->start, region->end,region->permissions);
 }
 
 
@@ -217,5 +185,39 @@ int parse_maps(pid_t pid,regions_array* arr_regions){
 
 
 
+char* get_region_name_by_address(long address){
+    regions_array* regions_arr = &process_to_debug.array_of_regions;
+    for(int i = 0; i < regions_arr->regions_count;i++){
+        if(address >= regions_arr->arr[i].start && address < regions_arr->arr[i].end){
+            char* name = get_region_name_by_enum(regions_arr->arr[i].type);
+            return name;
+        }
+    }
+    return NULL;
+}
 
 
+char* get_region_name_by_enum(int enum_number){
+    switch (enum_number) {
+        case BINARY:
+            return "BINARY";
+        case HEAP:
+            return "HEAP";
+        case STACK:
+            return "STACK";
+        case DATA:
+            return "DATA";
+        case DATA_LOADER:
+            return "DATA_LOADER";
+        case DATA_LIBC:
+            return "DATA_LIBC";
+        case LOADER_CODE:
+            return "LOADER_CODE";
+        case LIBC_CODE:
+            return "LIBC_CODE";
+        case VDSO:
+            return "VDSO";
+        default:
+            return "UNKNOWN";
+    }
+}

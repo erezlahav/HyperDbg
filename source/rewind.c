@@ -32,7 +32,7 @@ page* get_page_from_addr(long adress){
     }
     arr_pages* pages_arr = snapshot->pages_array;
     for(int i = 0;i < pages_arr->cnt_pages;i++){
-        if( adress >= pages_arr->pages[i].start && adress <= pages_arr->pages[i].start + pages_arr->pages[i].size){
+        if( adress >= pages_arr->pages[i].start && adress < pages_arr->pages[i].start + pages_arr->pages[i].size){
             return &pages_arr->pages[i];
         }
     }
@@ -173,7 +173,7 @@ int remote_write(void* local_addr,void* remote_addr,size_t size){
 
 int restore_pages(arr_pages* pages_arr){
     for(int i = 0;i < pages_arr->cnt_pages;i++){
-        if(pages_arr->pages[i].dirty_bit == 1){ 
+        if(pages_arr->pages[i].data){ 
             
             remote_write(pages_arr->pages[i].data,pages_arr->pages[i].start,pages_arr->pages[i].size);
         }

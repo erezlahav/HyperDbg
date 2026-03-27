@@ -95,7 +95,13 @@ int handle_stopped_process(pid_t pid, int status){
     long bp_rip = regs.rip-1;
 
     int cont = 0;
-    if(signal == SIGTRAP){
+    if(signal == SIGSEGV){
+        int handled = sigsegv_handler(signal,si);
+        if(handled) continue_proc(0,NULL);
+    }
+
+
+    else if(signal == SIGTRAP){
         breakpoint* bp = get_breakpoint_by_addr(bp_rip); //null if no breakpoint match
         if(bp != NULL){
             symbol* bp_symbol = get_symbol_by_adress(bp_rip);
@@ -120,13 +126,13 @@ int handle_stopped_process(pid_t pid, int status){
             symbol* bp_symbol = get_symbol_by_adress(regs.rip);
             printf(BLUE "0x%016lx " RESET,bp_rip);
             if(bp_symbol) printf("in " YELLOW "%s ()" RESET,bp_symbol->name);
-            else  printf(YELLOW "in ?? ()" RESET);
+            else{
+                char* name = get_region_name_by_address(regs.rip);
+                if(name) printf("in " YELLOW "%s ()" RESET,name);
+                else printf("in " YELLOW "?? ()" RESET);
+            }
             printf("\n");
         }
-    }
-    else if(signal == SIGSEGV){
-        int handled = sigsegv_handler(signal,si);
-        if(handled) continue_proc(0,NULL);
     }
     return cont;
 }
@@ -142,10 +148,12 @@ int sigsegv_handler(int signal,siginfo_t si){
         return 0;
     }
     else{
-        curr_page->dirty_bit = 1;
-        curr_page->data = malloc(PAGE_SIZE);
-        remote_copy(curr_page->data,(void*)curr_page->start,curr_page->size);
-        inject_mprotect(curr_page->start,curr_page->size,PROT_READ | PROT_WRITE);
+        if(curr_page->dirty_bit == 0){
+            curr_page->data = malloc(PAGE_SIZE);
+            remote_copy(curr_page->data,(void*)curr_page->start,curr_page->size);
+            inject_mprotect(curr_page->start,curr_page->size,PROT_READ | PROT_WRITE);
+            curr_page->dirty_bit = 1;
+        }
         return 1;
     }
     
