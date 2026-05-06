@@ -298,7 +298,15 @@ int rewind_all_live_mmaps(){
     return 0;
 }
 
-
+int is_live_mmaped(long address){
+    live_mmap_node* live_mmaps = process_to_debug.live_mmaps;
+    live_mmap_node* curr = live_mmaps;
+    while(curr != NULL){
+        if(curr->start == address) return 1;
+        curr = curr->next;
+    }
+    return 0;
+}
 
 live_mmap_node* get_live_mmap_by_addr(live_mmap_node** head, long addr,mmap_type type){
     live_mmap_node* curr = *head;

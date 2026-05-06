@@ -16,21 +16,17 @@ typedef enum{
     INTEGER
 }param_type;
 
-
 typedef struct {
     const char* name;
     unsigned long long* reg;
     param_type type;
 } syscall_param;
 
-
 typedef struct {
     const char* name;
     long number;
     syscall_param params[MAX_SYSCALLS_PARAMS]; 
 } syscall_entry;
-
-
 
 extern char hooked_syscalls[1000];
 extern syscall_entry syscalls[];

@@ -322,11 +322,18 @@ int record(int argc,char** argv){
                 inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
             }
             else{
-                for(long j = arr_regions->arr[i].start; j < arr_regions->arr[i].end; j+= PAGE_SIZE){
-                    page* curr_page = get_page_from_addr(j);
-                    curr_page->dirty_bit = 1;
-                    curr_page->data = malloc(PAGE_SIZE);
-                    remote_copy(curr_page->data,curr_page->start,curr_page->size);
+
+                if( is_live_mmaped(arr_regions->arr[i].start)){
+                    inject_mprotect(arr_regions->arr[i].start,arr_regions->arr[i].end-arr_regions->arr[i].start,permissions);
+                }
+
+                else{
+                    for(long j = arr_regions->arr[i].start; j < arr_regions->arr[i].end; j+= PAGE_SIZE){
+                        page* curr_page = get_page_from_addr(j);
+                        curr_page->dirty_bit = 1;
+                        curr_page->data = malloc(PAGE_SIZE);
+                        remote_copy(curr_page->data,curr_page->start,curr_page->size);
+                    }
                 }
             }
         }

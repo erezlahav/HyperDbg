@@ -19,7 +19,6 @@ typedef struct{
     void* data;
 }page;
 
-
 typedef struct{
     int cnt_pages;
     page* pages;
@@ -69,4 +68,5 @@ int delete_record(int restore_perm);
 int add_live_mmap(live_mmap_node** head, mmap_type type, void* addr, size_t size, int prot, int flags,int fd, off_t offset);
 int remove_live_mmap(live_mmap_node** head, void* addr,mmap_type type);
 int rewind_all_live_mmaps();
+int is_live_mmaped(long address);
 live_mmap_node* get_live_mmap_by_addr(live_mmap_node** head, long addr,mmap_type type); 

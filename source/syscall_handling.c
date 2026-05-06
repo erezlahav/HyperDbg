@@ -19,7 +19,7 @@
 
 extern debugee_process process_to_debug;
 
-#define SCRATCH_BUFFER_SIZE 4096 * 2
+#define SCRATCH_BUFFER_SIZE 4096 * 3
 #define SYSCALL_OPCODE 0x050f
 #define MAX_SYSCALLS 1000
 #define MAX_STR_READ 50
@@ -289,13 +289,30 @@ int hooked_syscall_handler(syscall_entry* entry, struct user_regs_struct* regs){
 
 
 
+void unescape_string(char* s) {
+    char* p = s;
+    char* q = s;
+    while (*p) {
+        if (*p == '\\' && *(p+1) == 'n') {
+            *q++ = '\n'; p += 2;
+        } else if (*p == '\\' && *(p+1) == 'r') {
+            *q++ = '\r'; p += 2;
+        } else if (*p == '\\' && *(p+1) == '\\') {
+            *q++ = '\\'; p += 2;
+        } else {
+            *q++ = *p++;
+        }
+    }
+    *q = '\0';
+}
+
 
 
 
 
 void change_params(const char* syscall_name, syscall_param* params){
     printf("You can modify the parameters. Type 'continue' or 'c' to run the syscall.\n");
-    char cmd[256];
+    char cmd[2048];
 
 
 
@@ -315,35 +332,56 @@ void change_params(const char* syscall_name, syscall_param* params){
         long val;
 
         char param[64];
-        char val_str[1024]; 
+        char val_str[2048]; 
 
-        if(sscanf(cmd,"set %63s %1023[^\n]",param,val_str) == 2)
-        {
-            for(int i=0; params[i].name!=NULL; i++)
-            {
-                if(strcmp(param, params[i].name) == 0)
+        if (sscanf(cmd, "set %63s", param) == 1) 
+        {   
+            char *pos = strstr(cmd, param);
+            if (pos) {
+                pos += strlen(param);
+                while (*pos == ' ') pos++;
+                
+                // 1. העתקה גולמית של כל מה שנותר ב-cmd
+                strncpy(val_str, pos, sizeof(val_str) - 1);
+                val_str[sizeof(val_str) - 1] = '\0';
+
+                // 2. הסרת ה-Newline של ה-Enter בלבד (מהסוף של val_str)
+                size_t len = strlen(val_str);
+                if (len > 0 && (val_str[len - 1] == '\n' || val_str[len - 1] == '\r')) {
+                    val_str[len - 1] = '\0';
+                    // בדיקה נוספת למקרה של \r\n (ווינדוס/פרוטוקול)
+                    len = strlen(val_str);
+                    if (len > 0 && (val_str[len - 1] == '\n' || val_str[len - 1] == '\r')) {
+                        val_str[len - 1] = '\0';
+                    }
+                }
+                for(int i=0; params[i].name!=NULL; i++)
                 {
-                    if(params[i].type == STRING)
+                    if(strcmp(param, params[i].name) == 0)
                     {
-                        size_t len = strlen(val_str) + 1;
-                        if(len > SCRATCH_BUFFER_SIZE) len = SCRATCH_BUFFER_SIZE;
-                        
-                        
-                        remote_write(val_str,process_to_debug.scratch_buffer,len);
+                        if(params[i].type == STRING)
+                        {
+                            unescape_string(val_str);
+                            size_t len = strlen(val_str) + 1;
+                            if(len > SCRATCH_BUFFER_SIZE) len = SCRATCH_BUFFER_SIZE;
+                            
+                            
+                            remote_write(val_str,process_to_debug.scratch_buffer,len);
 
 
 
-                        *params[i].reg = (unsigned long)process_to_debug.scratch_buffer;
+                            *params[i].reg = (unsigned long)process_to_debug.scratch_buffer;
 
-                        printf("%s updated to : %s\n",param, val_str);
+                            printf("%s updated to : %s\n",param, val_str);
+                        }
+                        else
+                        {
+                            long val = strtol(val_str, NULL, 0); 
+                            *params[i].reg = val;
+                            printf("%s updated to : %ld\n", param, val);
+                        }
+                        break;
                     }
-                    else
-                    {
-                        long val = strtol(val_str, NULL, 0); 
-                        *params[i].reg = val;
-                        printf("%s updated to : %ld\n", param, val);
-                    }
-                    break;
                 }
             }
         }

@@ -262,6 +262,8 @@ symbols_array* get_symbols_from_file(FILE* elf_file_ptr) {
         num_symtab = get_number_of_symbols_from_symbol_sh(symtab_sh);
     }
 
+
+
     // DYNSYM part
     symbol* dynsym_symbols = NULL;
     uint16_t num_dynsym = 0;
